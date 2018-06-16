@@ -9,7 +9,6 @@ import (
 
 type Pair struct {
 	ID            bson.ObjectId `json:"id" bson:"_id"`
-	Code          string        `json:"code" bson:"code"`
 	Name          string        `json:"name" bson:"name"`
 	BuyToken      bson.ObjectId `json:"buyToken" bson:"buyToken"`
 	BuyTokenCode  string        `json:"buyTokenCode" bson:"buyTokenCode"`
@@ -25,7 +24,6 @@ type Pair struct {
 
 func (t Pair) Validate() error {
 	return validation.ValidateStruct(&t,
-		validation.Field(&t.Code, validation.Required),
 		validation.Field(&t.Name, validation.Required),
 		validation.Field(&t.BuyToken, validation.Required),
 		validation.Field(&t.BuyTokenCode, validation.Required),

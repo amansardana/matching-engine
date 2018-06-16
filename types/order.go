@@ -64,7 +64,8 @@ func (orderStatus *OrderStatus) MarshalJSON() ([]byte, error) {
 type OrderType int
 
 const (
-	BUY OrderType = iota
+	_ OrderType = iota
+	BUY
 	SELL
 )
 
@@ -114,137 +115,137 @@ type Order struct {
 	UpdatedAt time.Time `json:"updatedAt" bson:"updatedAt"`
 }
 
-func (o *Order) MarshalJSON() ([]byte, error) {
-	// order := map[string]interface{}{
-	// 	"id":              o.Id,
-	// 	"exchangeAddress": o.ExchangeAddress,
-	// 	"maker":           o.Maker,
-	// 	"tokenBuy":        o.TokenBuy,
-	// 	"tokenSell":       o.TokenSell,
-	// 	"symbolBuy":       o.SymbolBuy,
-	// 	"symbolSell":      o.SymbolSell,
-	// 	"amountBuy":       o.AmountBuy.String(),
-	// 	"amountSell":      o.AmountSell.String(),
-	// 	"expires":         o.Expires.String(),
-	// 	"nonce":           o.Nonce.String(),
-	// 	"feeMake":         o.FeeMake.String(),
-	// 	"feeTake":         o.FeeTake.String(),
-	// 	"signature": map[string]interface{}{
-	// 		"V": o.Signature.V,
-	// 		"R": o.Signature.R,
-	// 		"S": o.Signature.S,
-	// 	},
-	// 	"pairID": o.PairID,
-	// 	"hash":   o.Hash,
-	// 	"price":  o.Price,
-	// 	"amount": o.Amount,
-	// }
-	return json.Marshal(o)
-}
+// func (o *Order) MarshalJSON() ([]byte, error) {
+// order := map[string]interface{}{
+// 	"id":              o.Id,
+// 	"exchangeAddress": o.ExchangeAddress,
+// 	"maker":           o.Maker,
+// 	"tokenBuy":        o.TokenBuy,
+// 	"tokenSell":       o.TokenSell,
+// 	"symbolBuy":       o.SymbolBuy,
+// 	"symbolSell":      o.SymbolSell,
+// 	"amountBuy":       o.AmountBuy.String(),
+// 	"amountSell":      o.AmountSell.String(),
+// 	"expires":         o.Expires.String(),
+// 	"nonce":           o.Nonce.String(),
+// 	"feeMake":         o.FeeMake.String(),
+// 	"feeTake":         o.FeeTake.String(),
+// 	"signature": map[string]interface{}{
+// 		"V": o.Signature.V,
+// 		"R": o.Signature.R,
+// 		"S": o.Signature.S,
+// 	},
+// 	"pairID": o.PairID,
+// 	"hash":   o.Hash,
+// 	"price":  o.Price,
+// 	"amount": o.Amount,
+// }
+// 	return json.Marshal(o)
+// }
 
-func (o *Order) UnmarshalJSON(b []byte) (err error) {
-	// order := map[string]interface{}{}
+// func (o *Order) UnmarshalJSON(b []byte) (err error) {
+// order := map[string]interface{}{}
 
-	err = json.Unmarshal(b, o)
-	if err != nil {
-		return
-	}
+// err = json.Unmarshal(b, o)
+// if err != nil {
+// 	return
+// }
 
-	// if order["id"] == nil {
-	// 	return errors.New("Order ID not set")
-	// }
+// if order["id"] == nil {
+// 	return errors.New("Order ID not set")
+// }
 
-	// o.Id, _ = strconv.ParseUint(order["id"].(string), 10, 64)
+// o.Id, _ = strconv.ParseUint(order["id"].(string), 10, 64)
 
-	// if order["price"] != nil {
-	// 	o.Price, _ = strconv.ParseUint(order["price"].(string), 10, 64)
-	// }
+// if order["price"] != nil {
+// 	o.Price, _ = strconv.ParseUint(order["price"].(string), 10, 64)
+// }
 
-	// if order["amount"] != nil {
-	// 	o.Amount, _ = strconv.ParseUint(order["amount"].(string), 10, 64)
-	// }
+// if order["amount"] != nil {
+// 	o.Amount, _ = strconv.ParseUint(order["amount"].(string), 10, 64)
+// }
 
-	// o.ExchangeAddress = HexToAddress(order["exchangeAddress"].(string))
-	// o.Maker = HexToAddress(order["maker"].(string))
-	// o.TokenBuy = HexToAddress(order["tokenBuy"].(string))
-	// o.TokenSell = HexToAddress(order["tokenSell"].(string))
-	// o.SymbolBuy = order["symbolBuy"].(string)
-	// o.SymbolSell = order["symbolSell"].(string)
+// o.ExchangeAddress = HexToAddress(order["exchangeAddress"].(string))
+// o.Maker = HexToAddress(order["maker"].(string))
+// o.TokenBuy = HexToAddress(order["tokenBuy"].(string))
+// o.TokenSell = HexToAddress(order["tokenSell"].(string))
+// o.SymbolBuy = order["symbolBuy"].(string)
+// o.SymbolSell = order["symbolSell"].(string)
 
-	// o.AmountBuy = new(big.Int)
-	// o.AmountSell = new(big.Int)
-	// o.Expires = new(big.Int)
-	// o.Nonce = new(big.Int)
-	// o.FeeMake = new(big.Int)
-	// o.FeeTake = new(big.Int)
+// o.AmountBuy = new(big.Int)
+// o.AmountSell = new(big.Int)
+// o.Expires = new(big.Int)
+// o.Nonce = new(big.Int)
+// o.FeeMake = new(big.Int)
+// o.FeeTake = new(big.Int)
 
-	// o.AmountBuy.UnmarshalJSON([]byte(order["amountBuy"].(string)))
-	// o.AmountSell.UnmarshalJSON([]byte(order["amountSell"].(string)))
-	// o.Expires.UnmarshalJSON([]byte(order["expires"].(string)))
-	// o.Nonce.UnmarshalJSON([]byte(order["nonce"].(string)))
-	// o.FeeMake.UnmarshalJSON([]byte(order["feeMake"].(string)))
-	// o.FeeTake.UnmarshalJSON([]byte(order["feeTake"].(string)))
+// o.AmountBuy.UnmarshalJSON([]byte(order["amountBuy"].(string)))
+// o.AmountSell.UnmarshalJSON([]byte(order["amountSell"].(string)))
+// o.Expires.UnmarshalJSON([]byte(order["expires"].(string)))
+// o.Nonce.UnmarshalJSON([]byte(order["nonce"].(string)))
+// o.FeeMake.UnmarshalJSON([]byte(order["feeMake"].(string)))
+// o.FeeTake.UnmarshalJSON([]byte(order["feeTake"].(string)))
 
-	// o.PairID = HexToHash(order["pairID"].(string))
-	// o.Hash = HexToHash(order["hash"].(string))
+// o.PairID = HexToHash(order["pairID"].(string))
+// o.Hash = HexToHash(order["hash"].(string))
 
-	// signature := order["signature"].(map[string]interface{})
-	// o.Signature = &Signature{
-	// 	V: byte(signature["V"].(float64)),
-	// 	R: HexToHash(signature["R"].(string)),
-	// 	S: HexToHash(signature["S"].(string)),
-	// }
+// signature := order["signature"].(map[string]interface{})
+// o.Signature = &Signature{
+// 	V: byte(signature["V"].(float64)),
+// 	R: HexToHash(signature["R"].(string)),
+// 	S: HexToHash(signature["S"].(string)),
+// }
 
-	return nil
-}
+// 	return nil
+// }
 
-func (o *Order) Decode(order map[string]interface{}) error {
-	if order["id"] == nil {
-		return errors.New("Order ID not set")
-	}
-	// o.ID = uint64(order["id"].(float64))
+// func (o *Order) Decode(order map[string]interface{}) error {
+// 	if order["id"] == nil {
+// 		return errors.New("Order ID not set")
+// 	}
+// 	// o.ID = uint64(order["id"].(float64))
 
-	if order["price"] != nil {
-		o.Price = uint64(order["price"].(float64))
-	}
+// 	if order["price"] != nil {
+// 		o.Price = uint64(order["price"].(float64))
+// 	}
 
-	if order["amount"] != nil {
-		o.Amount = uint64(order["amount"].(float64))
-	}
+// 	if order["amount"] != nil {
+// 		o.Amount = uint64(order["amount"].(float64))
+// 	}
 
-	// o.ExchangeAddress = HexToAddress(order["exchangeAddress"].(string))
-	// o.Maker = HexToAddress(order["maker"].(string))
-	// o.TokenBuy = HexToAddress(order["tokenBuy"].(string))
-	// o.TokenSell = HexToAddress(order["tokenSell"].(string))
-	// o.SymbolBuy = order["symbolBuy"].(string)
-	// o.SymbolSell = order["symbolSell"].(string)
+// o.ExchangeAddress = HexToAddress(order["exchangeAddress"].(string))
+// o.Maker = HexToAddress(order["maker"].(string))
+// o.TokenBuy = HexToAddress(order["tokenBuy"].(string))
+// o.TokenSell = HexToAddress(order["tokenSell"].(string))
+// o.SymbolBuy = order["symbolBuy"].(string)
+// o.SymbolSell = order["symbolSell"].(string)
 
-	// o.AmountBuy = new(big.Int)
-	// o.AmountSell = new(big.Int)
-	// o.Expires = new(big.Int)
-	// o.Nonce = new(big.Int)
-	// o.FeeMake = new(big.Int)
-	// o.FeeTake = new(big.Int)
+// o.AmountBuy = new(big.Int)
+// o.AmountSell = new(big.Int)
+// o.Expires = new(big.Int)
+// o.Nonce = new(big.Int)
+// o.FeeMake = new(big.Int)
+// o.FeeTake = new(big.Int)
 
-	// o.AmountBuy.UnmarshalJSON([]byte(order["amountBuy"].(string)))
-	// o.AmountSell.UnmarshalJSON([]byte(order["amountSell"].(string)))
-	// o.Expires.UnmarshalJSON([]byte(order["expires"].(string)))
-	// o.Nonce.UnmarshalJSON([]byte(order["nonce"].(string)))
-	// o.FeeMake.UnmarshalJSON([]byte(order["feeMake"].(string)))
-	// o.FeeTake.UnmarshalJSON([]byte(order["feeTake"].(string)))
+// o.AmountBuy.UnmarshalJSON([]byte(order["amountBuy"].(string)))
+// o.AmountSell.UnmarshalJSON([]byte(order["amountSell"].(string)))
+// o.Expires.UnmarshalJSON([]byte(order["expires"].(string)))
+// o.Nonce.UnmarshalJSON([]byte(order["nonce"].(string)))
+// o.FeeMake.UnmarshalJSON([]byte(order["feeMake"].(string)))
+// o.FeeTake.UnmarshalJSON([]byte(order["feeTake"].(string)))
 
-	// o.PairID = HexToHash(order["pairID"].(string))
-	// o.Hash = HexToHash(order["hash"].(string))
+// o.PairID = HexToHash(order["pairID"].(string))
+// o.Hash = HexToHash(order["hash"].(string))
 
-	// signature := order["signature"].(map[string]interface{})
-	// o.Signature = &Signature{
-	// 	V: byte(signature["V"].(float64)),
-	// 	R: HexToHash(signature["R"].(string)),
-	// 	S: HexToHash(signature["S"].(string)),
-	// }
+// signature := order["signature"].(map[string]interface{})
+// o.Signature = &Signature{
+// 	V: byte(signature["V"].(float64)),
+// 	R: HexToHash(signature["R"].(string)),
+// 	S: HexToHash(signature["S"].(string)),
+// }
 
-	return nil
-}
+// 	return nil
+// }
 
 // Stringer method for order
 // func (o *Order) String() string {
@@ -318,9 +319,9 @@ func (o *Order) Decode(order map[string]interface{}) error {
 //Exchange Address needs to be correct
 //AmountBuy and AmountSell need to be positive
 //OrderHash needs to be correct
-func (o *Order) ValidateOrder() (bool, error) {
-	return true, nil
-}
+// func (o *Order) ValidateOrder() (bool, error) {
+// 	return true, nil
+// }
 
 // NewOrderPlacedEvent is called when an order is first placed in
 // the orderbook.

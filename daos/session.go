@@ -53,7 +53,7 @@ func (d *Database) GetWithSort(dbName, collection string, query interface{}, sor
 	err = sc.DB(dbName).C(collection).Find(query).Sort(sort...).Skip(offset).Limit(limit).All(response)
 	return
 }
-func (d *Database) Update(dbName, collection string, query interface{}, update interface{}, response interface{}) (err error) {
+func (d *Database) Update(dbName, collection string, query interface{}, update interface{}) (err error) {
 	sc := d.session.Copy()
 	defer sc.Close()
 

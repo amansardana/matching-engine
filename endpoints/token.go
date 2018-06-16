@@ -2,18 +2,18 @@ package endpoints
 
 import (
 	"github.com/amansardana/matching-engine/errors"
-	"github.com/amansardana/matching-engine/tokens"
+	"github.com/amansardana/matching-engine/services"
 	"github.com/amansardana/matching-engine/types"
 	"github.com/go-ozzo/ozzo-routing"
 	"labix.org/v2/mgo/bson"
 )
 
 type tokenEndpoint struct {
-	tokenService *tokens.TokenService
+	tokenService *services.TokenService
 }
 
 // ServeToken sets up the routing of token endpoints and the corresponding handlers.
-func ServeTokenResource(rg *routing.RouteGroup, tokenService *tokens.TokenService) {
+func ServeTokenResource(rg *routing.RouteGroup, tokenService *services.TokenService) {
 	r := &tokenEndpoint{tokenService}
 	rg.Get("/tokens/<id>", r.get)
 	rg.Get("/tokens", r.query)

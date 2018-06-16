@@ -4,17 +4,16 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/amansardana/matching-engine/pairs"
-	"github.com/amansardana/matching-engine/tokens"
-
 	"github.com/amansardana/matching-engine/endpoints"
+	"github.com/amansardana/matching-engine/rabbitmq"
+	"github.com/amansardana/matching-engine/services"
 
 	"github.com/amansardana/matching-engine/engine"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/amansardana/matching-engine/app"
 	"github.com/amansardana/matching-engine/daos"
 	"github.com/amansardana/matching-engine/errors"
-	"github.com/Sirupsen/logrus"
 	"github.com/go-ozzo/ozzo-routing"
 	"github.com/go-ozzo/ozzo-routing/content"
 	"github.com/go-ozzo/ozzo-routing/cors"
@@ -33,6 +32,8 @@ func main() {
 
 	// create the logger
 	logger := logrus.New()
+
+	rabbitmq.InitConnection("amqp://guest:guest@localhost:5672/")
 
 	// connect to the database
 	if err := daos.InitSession(); err != nil {
@@ -79,19 +80,26 @@ func buildRouter(logger *logrus.Logger) *routing.Router {
 	orderDao := daos.NewOrderDao()
 	tokenDao := daos.NewTokenDao()
 	pairDao := daos.NewPairDao()
+	balanceDao := daos.NewBalanceDao()
+	addressDao := daos.NewAddressDao()
 
 	// get services for injection
-	tokenService := tokens.NewTokenService(tokenDao)
-	pairService := pairs.NewPairService(pairDao, tokenDao)
+	tokenService := services.NewTokenService(tokenDao)
+	pairService := services.NewPairService(pairDao, tokenDao)
+	balanceService := services.NewBalanceService(balanceDao, tokenDao)
+	orderService := services.NewOrderService(orderDao, balanceDao)
+	addressService := services.NewAddressService(addressDao, balanceDao, tokenDao)
 
 	// instantiate engine
-	if err := engine.InitEngine(orderDao); err != nil {
+	if _, err := engine.InitEngine(orderDao); err != nil {
 		panic(err)
 	}
 
 	endpoints.ServeTokenResource(rg, tokenService)
 	endpoints.ServePairResource(rg, pairService)
-	endpoints.ServeOrderResource(rg)
+	endpoints.ServeBalanceResource(rg, balanceService)
+	endpoints.ServeOrderResource(rg, orderService)
+	endpoints.ServeAddressResource(rg, addressService)
 	// artistDAO := daos.NewArtistDAO()
 	// apis.ServeArtistResource(rg, services.NewArtistService(artistDAO))
 

@@ -1,4 +1,4 @@
-package pairs
+package services
 
 import (
 	"errors"
@@ -28,9 +28,9 @@ func (s *PairService) Create(pair *types.Pair) error {
 	if err != nil {
 		return aerrors.InvalidData(map[string]error{"buyToken": errors.New("Token with id " + pair.SellToken.Hex() + " doesn't exists")})
 	}
-	pair.SellTokenCode = st.Code
-	pair.BuyTokenCode = bt.Code
-	
+	pair.SellTokenCode = st.Symbol
+	pair.BuyTokenCode = bt.Symbol
+
 	err = s.pairDao.Create(pair)
 	return err
 

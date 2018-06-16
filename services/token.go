@@ -1,4 +1,4 @@
-package tokens
+package services
 
 import (
 	"labix.org/v2/mgo/bson"

@@ -10,7 +10,6 @@ import (
 
 type Token struct {
 	ID              bson.ObjectId `json:"id" bson:"_id"`
-	Code            string        `json:"code" bson:"code"`
 	Name            string        `json:"name" bson:"name"`
 	Symbol          string        `json:"symbol" bson:"symbol"`
 	Image           Image         `json:"image" bson:"image"`
@@ -29,7 +28,6 @@ type Image struct {
 
 func (t Token) Validate() error {
 	return validation.ValidateStruct(&t,
-		validation.Field(&t.Code, validation.Required),
 		validation.Field(&t.Name, validation.Required),
 		validation.Field(&t.Symbol, validation.Required),
 		validation.Field(&t.ContractAddress, validation.Required, validation.NewStringRule(common.IsHexAddress, "Invalid Address")),

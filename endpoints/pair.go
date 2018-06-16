@@ -2,18 +2,18 @@ package endpoints
 
 import (
 	"github.com/amansardana/matching-engine/errors"
-	"github.com/amansardana/matching-engine/pairs"
+	"github.com/amansardana/matching-engine/services"
 	"github.com/amansardana/matching-engine/types"
 	"github.com/go-ozzo/ozzo-routing"
 	"labix.org/v2/mgo/bson"
 )
 
 type pairEndpoint struct {
-	pairService *pairs.PairService
+	pairService *services.PairService
 }
 
 // ServePair sets up the routing of pair endpoints and the corresponding handlers.
-func ServePairResource(rg *routing.RouteGroup, pairService *pairs.PairService) {
+func ServePairResource(rg *routing.RouteGroup, pairService *services.PairService) {
 	r := &pairEndpoint{pairService}
 	rg.Get("/pairs/<id>", r.get)
 	rg.Get("/pairs", r.query)
