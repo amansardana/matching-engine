@@ -5,6 +5,10 @@ import (
 	"errors"
 	"log"
 
+	"github.com/amansardana/matching-engine/redis"
+
+	"github.com/gomodule/redigo/redis"
+
 	"github.com/streadway/amqp"
 
 	"github.com/amansardana/matching-engine/rabbitmq"
@@ -14,7 +18,8 @@ import (
 )
 
 type EngineResource struct {
-	orderDao *daos.OrderDao
+	orderDao  *daos.OrderDao
+	redisConn redis.Conn
 }
 
 var channels = make(map[string]*amqp.Channel)
@@ -26,7 +31,8 @@ func InitEngine(orderDao *daos.OrderDao) (engine *EngineResource, err error) {
 		if orderDao == nil {
 			return nil, errors.New("Need pointer to struct of type daos.OrderDao")
 		}
-		Engine = &EngineResource{orderDao}
+		rc := redisClient.InitConnection()
+		Engine = &EngineResource{orderDao, rc}
 		Engine.subscribeOrder()
 	}
 	engine = Engine
@@ -81,7 +87,17 @@ func (e *EngineResource) subscribeOrder() error {
 
 		go func() {
 			for d := range msgs {
-				log.Printf("Received a message: %s", d.Body)
+				// log.Printf("Received a message: %s", d.Body)
+				var order *types.Order
+				err := json.Unmarshal(d.Body, &order)
+				if err != nil {
+					log.Printf("error: %s", err)
+				}
+				if order.Type == types.SELL {
+					e.sellOrder(order)
+				} else if order.Type == types.BUY {
+					e.buyOrder(order)
+				}
 			}
 		}()
 

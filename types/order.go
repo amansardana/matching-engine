@@ -94,8 +94,8 @@ func (orderType *OrderType) MarshalJSON() ([]byte, error) {
 
 type Order struct {
 	ID               bson.ObjectId `json:"id" bson:"_id"`
-	TokenBuy         string        `json:"tokenBuy" bson:"tokenBuy"`
-	TokenSell        string        `json:"tokenSell" bson:"tokenSell"`
+	BuyToken         string        `json:"buyToken" bson:"buyToken"`
+	SellToken        string        `json:"sellToken" bson:"sellToken"`
 	BuyTokenAddress  string        `json:"buyTokenAddress" bson:"buyTokenAddress"`
 	SellTokenAddress string        `json:"sellTokenAddress" bson:"sellTokenAddress"`
 	Amount           uint64        `json:"amount" bson:"amount"`
@@ -108,6 +108,7 @@ type Order struct {
 	Status           OrderStatus   `json:"status" bson:"status"`
 	Signature        *Signature    `json:"signature" bson:"signature"`
 	PairID           bson.ObjectId `json:"pairID" bson:"pairID"`
+	PairName         string        `json:"pairName" bson:"pairName"`
 	Hash             string        `json:"hash" bson:"hash"`
 	UserAddress      string        `json:"userAddress" bson:"userAddress"`
 
@@ -396,3 +397,7 @@ type Order struct {
 // 	o.Signature = sig
 // 	return nil
 // }
+
+func (o *Order) GetKVPrefix() string {
+	return o.BuyToken + "/" + o.SellToken
+}

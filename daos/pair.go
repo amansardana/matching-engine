@@ -1,6 +1,7 @@
 package daos
 
 import (
+	"errors"
 	"time"
 
 	"github.com/amansardana/matching-engine/app"
@@ -34,5 +35,18 @@ func (dao *PairDao) GetAll() (response []types.Pair, err error) {
 
 func (dao *PairDao) GetByID(id bson.ObjectId) (response *types.Pair, err error) {
 	err = DB.GetByID(dao.dbName, dao.collectionName, id, &response)
+	return
+}
+func (dao *PairDao) GetByName(name string) (response *types.Pair, err error) {
+	var res []*types.Pair
+	q := bson.M{"name": bson.RegEx{name, "i"}}
+	err = DB.Get(dao.dbName, dao.collectionName, q, 0, 1, &res)
+	if err != nil {
+		return
+	} else if len(res) > 0 {
+		response = res[0]
+	} else {
+		err = errors.New("No Pair found")
+	}
 	return
 }

@@ -28,8 +28,10 @@ func (s *PairService) Create(pair *types.Pair) error {
 	if err != nil {
 		return aerrors.InvalidData(map[string]error{"buyToken": errors.New("Token with id " + pair.SellToken.Hex() + " doesn't exists")})
 	}
-	pair.SellTokenCode = st.Symbol
-	pair.BuyTokenCode = bt.Symbol
+	pair.SellTokenSymbol = st.Symbol
+	pair.SellTokenAddress = st.ContractAddress
+	pair.BuyTokenSymbol = bt.Symbol
+	pair.BuyTokenAddress = bt.ContractAddress
 
 	err = s.pairDao.Create(pair)
 	return err

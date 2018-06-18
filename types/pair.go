@@ -8,12 +8,14 @@ import (
 )
 
 type Pair struct {
-	ID            bson.ObjectId `json:"id" bson:"_id"`
-	Name          string        `json:"name" bson:"name"`
-	BuyToken      bson.ObjectId `json:"buyToken" bson:"buyToken"`
-	BuyTokenCode  string        `json:"buyTokenCode" bson:"buyTokenCode"`
-	SellToken     bson.ObjectId `json:"sellToken" bson:"sellToken"`
-	SellTokenCode string        `json:"sellTokenCode" bson:"sellTokenCode"`
+	ID               bson.ObjectId `json:"id" bson:"_id"`
+	Name             string        `json:"name" bson:"name"`
+	BuyToken         bson.ObjectId `json:"buyToken" bson:"buyToken"`
+	BuyTokenSymbol   string        `json:"buyTokenSymbol" bson:"buyTokenSymbol"`
+	BuyTokenAddress  string        `json:"buyTokenAddress" bson:"buyTokenAddress"`
+	SellToken        bson.ObjectId `json:"sellToken" bson:"sellToken"`
+	SellTokenAddress string        `json:"sellTokenAddress" bson:"sellTokenAddress"`
+	SellTokenSymbol  string        `json:"sellTokenSymbol" bson:"sellTokenSymbol"`
 
 	MakerFee float64 `json:"makerFee" bson:"makerFee"`
 	TakerFee float64 `json:"takerFee" bson:"takerFee"`
@@ -26,8 +28,8 @@ func (t Pair) Validate() error {
 	return validation.ValidateStruct(&t,
 		validation.Field(&t.Name, validation.Required),
 		validation.Field(&t.BuyToken, validation.Required),
-		validation.Field(&t.BuyTokenCode, validation.Required),
+		validation.Field(&t.BuyTokenSymbol, validation.Required),
 		validation.Field(&t.SellToken, validation.Required),
-		validation.Field(&t.SellTokenCode, validation.Required),
+		validation.Field(&t.SellTokenSymbol, validation.Required),
 	)
 }

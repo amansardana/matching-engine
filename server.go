@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/amansardana/matching-engine/redis"
+
 	"github.com/amansardana/matching-engine/endpoints"
 	"github.com/amansardana/matching-engine/rabbitmq"
 	"github.com/amansardana/matching-engine/services"
@@ -75,6 +77,7 @@ func buildRouter(logger *logrus.Logger) *routing.Router {
 	// 	SigningMethod: app.Config.JWTSigningMethod,
 	// 	TokenHandler:  apis.JWTHandler,
 	// }))
+	redisClient.InitConnection()
 
 	// get daos for dependency injection
 	orderDao := daos.NewOrderDao()
@@ -87,7 +90,7 @@ func buildRouter(logger *logrus.Logger) *routing.Router {
 	tokenService := services.NewTokenService(tokenDao)
 	pairService := services.NewPairService(pairDao, tokenDao)
 	balanceService := services.NewBalanceService(balanceDao, tokenDao)
-	orderService := services.NewOrderService(orderDao, balanceDao)
+	orderService := services.NewOrderService(orderDao, balanceDao, pairDao)
 	addressService := services.NewAddressService(addressDao, balanceDao, tokenDao)
 
 	// instantiate engine

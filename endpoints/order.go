@@ -1,8 +1,6 @@
 package endpoints
 
 import (
-	"fmt"
-
 	"github.com/amansardana/matching-engine/services"
 	"github.com/amansardana/matching-engine/types"
 	"github.com/go-ozzo/ozzo-routing"
@@ -32,7 +30,6 @@ func (r *orderEndpoint) create(c *routing.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(order)
 	err = r.orderService.Create(order)
 	if err != nil {
 		return err
