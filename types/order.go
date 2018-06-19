@@ -3,8 +3,10 @@ package types
 import (
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
+	"github.com/amansardana/matching-engine/utils"
 	"labix.org/v2/mgo/bson"
 )
 
@@ -93,27 +95,28 @@ func (orderType *OrderType) MarshalJSON() ([]byte, error) {
 }
 
 type Order struct {
-	ID               bson.ObjectId `json:"id" bson:"_id"`
-	BuyToken         string        `json:"buyToken" bson:"buyToken"`
-	SellToken        string        `json:"sellToken" bson:"sellToken"`
-	BuyTokenAddress  string        `json:"buyTokenAddress" bson:"buyTokenAddress"`
-	SellTokenAddress string        `json:"sellTokenAddress" bson:"sellTokenAddress"`
-	Amount           uint64        `json:"amount" bson:"amount"`
-	Price            uint64        `json:"price" bson:"price"`
-	Fee              uint64        `json:"fee" bson:"fee"`
-	Type             OrderType     `json:"type" bson:"type"`
-	AmountBuy        uint64        `json:"amountBuy" bson:"amountBuy"`
-	AmountSell       uint64        `json:"amountSell" bson:"amountSell"`
-	ExchangeAddress  string        `json:"exchangeAddress" bson:"exchangeAddress"`
-	Status           OrderStatus   `json:"status" bson:"status"`
-	Signature        *Signature    `json:"signature" bson:"signature"`
-	PairID           bson.ObjectId `json:"pairID" bson:"pairID"`
-	PairName         string        `json:"pairName" bson:"pairName"`
-	Hash             string        `json:"hash" bson:"hash"`
-	UserAddress      string        `json:"userAddress" bson:"userAddress"`
+	ID               bson.ObjectId `json:"id" bson:"_id" redis:"_id"`
+	BuyToken         string        `json:"buyToken" bson:"buyToken" redis:"buyToken"`
+	SellToken        string        `json:"sellToken" bson:"sellToken" redis:"sellToken"`
+	BuyTokenAddress  string        `json:"buyTokenAddress" bson:"buyTokenAddress" redis:"buyTokenAddress"`
+	SellTokenAddress string        `json:"sellTokenAddress" bson:"sellTokenAddress" redis:"sellTokenAddress"`
+	FilledAmount     uint64        `json:"filledAmount" bson:"filledAmount" redis:"filledAmount"`
+	Amount           uint64        `json:"amount" bson:"amount" redis:"amount"`
+	Price            uint64        `json:"price" bson:"price" redis:"price"`
+	Fee              uint64        `json:"fee" bson:"fee" redis:"fee"`
+	Type             OrderType     `json:"type" bson:"type" redis:"type"`
+	AmountBuy        uint64        `json:"amountBuy" bson:"amountBuy" redis:"amountBuy"`
+	AmountSell       uint64        `json:"amountSell" bson:"amountSell" redis:"amountSell"`
+	ExchangeAddress  string        `json:"exchangeAddress" bson:"exchangeAddress" redis:"exchangeAddress"`
+	Status           OrderStatus   `json:"status" bson:"status" redis:"status"`
+	Signature        *Signature    `json:"signature,omitempty" bson:"signature" redis:"signature"`
+	PairID           bson.ObjectId `json:"pairID" bson:"pairID" redis:"pairID"`
+	PairName         string        `json:"pairName" bson:"pairName" redis:"pairName"`
+	Hash             string        `json:"hash" bson:"hash" redis:"hash"`
+	UserAddress      string        `json:"userAddress" bson:"userAddress" redis:"userAddress"`
 
-	CreatedAt time.Time `json:"createdAt" bson:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt" bson:"updatedAt"`
+	CreatedAt time.Time `json:"createdAt" bson:"createdAt" redis:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt" bson:"updatedAt" redis:"updatedAt"`
 }
 
 // func (o *Order) MarshalJSON() ([]byte, error) {
@@ -283,16 +286,16 @@ type Order struct {
 // ComputeHash calculates the order hash
 // func (o *Order) ComputeHash() (ch common.Hash) {
 // 	sha := sha3.NewKeccak256()
-// sha.Write(o.ExchangeAddress.Bytes())
-// sha.Write(o.TokenBuy.Bytes())
-// sha.Write(BigToHash(o.AmountBuy).Bytes())
-// sha.Write(o.TokenSell.Bytes())
-// sha.Write(BigToHash(o.AmountSell).Bytes())
-// sha.Write(BigToHash(o.Expires).Bytes())
-// sha.Write(BigToHash(o.Nonce).Bytes())
-// sha.Write(o.Maker.Bytes())
-// return BytesToHash(sha.Sum(nil))
-// return
+// 	// sha.Write(o.ExchangeAddress.Bytes())
+// 	sha.Write([]byte(o.BuyToken))
+// 	sha.Write([]byte(o.SellToken))
+// 	// sha.Write(strconv.ParseUint(o.Price))
+// 	// sha.Write(BigToHash(o.Amount).Bytes())
+// 	// sha.Write(BigToHash(o.Expires).Bytes())
+// 	// sha.Write(BigToHash(o.Nonce).Bytes())
+// 	// sha.Write(o.Maker.Bytes())
+// 	// return BytesToHash(sha.Sum(nil))
+// 	return
 // }
 
 // VerifySignature checks that the order signature corresponds to the address in the maker field
@@ -399,5 +402,24 @@ type Order struct {
 // }
 
 func (o *Order) GetKVPrefix() string {
-	return o.BuyToken + "/" + o.SellToken
+	return o.BuyToken + "::" + o.SellToken
+}
+func (o *Order) GetOBKeys() (ss, list string) {
+	t, _ := o.Type.MarshalJSON()
+	k := strings.ToLower(string(t))
+
+	ss = o.GetKVPrefix() + "::" + k
+	list = o.GetKVPrefix() + "::" + k + "::" + utils.UintToPaddedString(o.Price)
+	return
+}
+func (o *Order) GetOBMatchKey() (ss string) {
+	var k string
+	if o.Type == BUY {
+		k = "sell"
+	} else if o.Type == SELL {
+		k = "buy"
+	}
+
+	ss = o.GetKVPrefix() + "::" + k
+	return
 }

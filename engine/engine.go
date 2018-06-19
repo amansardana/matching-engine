@@ -93,11 +93,7 @@ func (e *EngineResource) subscribeOrder() error {
 				if err != nil {
 					log.Printf("error: %s", err)
 				}
-				if order.Type == types.SELL {
-					e.sellOrder(order)
-				} else if order.Type == types.BUY {
-					e.buyOrder(order)
-				}
+				e.matchOrder(order)
 			}
 		}()
 

@@ -55,11 +55,10 @@ func (dao *BalanceDao) LockFunds(address string, token string, amount *types.Tok
 	q := bson.M{"address": address}
 	updateQuery := bson.M{
 		"$set": bson.M{
-			"tokens": bson.M{
-				token: amount,
-			},
+			"tokens." + token: amount,
 		},
 	}
+
 	err = DB.Update(dao.dbName, dao.collectionName, q, updateQuery)
 	return
 }
