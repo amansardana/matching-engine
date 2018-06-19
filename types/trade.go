@@ -1,12 +1,5 @@
 package types
 
-import (
-	"errors"
-
-	. "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto/sha3"
-)
-
 // Trade struct holds arguments corresponding to a "Taker Order"
 // To be valid an accept by the matching engine (and ultimately the exchange smart-contract),
 // the trade signature must be made from the trader Maker account
@@ -57,15 +50,15 @@ func NewTrade(o *Order, amount uint64, price uint64, taker string) *Trade {
 //
 // The OrderHash, Aounot, Taker and TradeNonce attributes must be
 // set before attempting to compute the trade hash
-func (t *Trade) ComputeHash() Hash {
-	sha := sha3.NewKeccak256()
+// func (t *Trade) ComputeHash() Hash {
+// 	sha := sha3.NewKeccak256()
 
-	sha.Write(t.OrderHash.Bytes())
-	sha.Write(BigToHash(t.Amount).Bytes())
-	sha.Write(t.Taker.Bytes())
-	sha.Write(BigToHash(t.TradeNonce).Bytes())
-	return BytesToHash(sha.Sum(nil))
-}
+// 	sha.Write(t.OrderHash.Bytes())
+// 	sha.Write(BigToHash(t.Amount).Bytes())
+// 	sha.Write(t.Taker.Bytes())
+// 	sha.Write(BigToHash(t.TradeNonce).Bytes())
+// 	return BytesToHash(sha.Sum(nil))
+// }
 
 // Sign calculates ands sets the trade hash and signature with the
 // given wallet
@@ -83,44 +76,44 @@ func (t *Trade) ComputeHash() Hash {
 
 // Valid verifies that all the fields of a struct are set and
 // not null
-func (t *Trade) Validate() error {
-	if t.OrderHash.String() == "" {
-		return errors.New("Order Hash missing")
-	}
+// func (t *Trade) Validate() error {
+// 	if t.OrderHash.String() == "" {
+// 		return errors.New("Order Hash missing")
+// 	}
 
-	if t.Hash.String() == "" {
-		return errors.New("Trade Hash missing")
-	}
+// 	if t.Hash.String() == "" {
+// 		return errors.New("Trade Hash missing")
+// 	}
 
-	if t.Amount.Sign() == 0 {
-		return errors.New("Amount missing or amount null")
-	}
+// 	if t.Amount.Sign() == 0 {
+// 		return errors.New("Amount missing or amount null")
+// 	}
 
-	if t.Taker.String() == "" {
-		return errors.New("Taker address is not set")
-	}
+// 	if t.Taker.String() == "" {
+// 		return errors.New("Taker address is not set")
+// 	}
 
-	if t.Signature == nil {
-		return errors.New("Signature is not set")
-	}
+// 	if t.Signature == nil {
+// 		return errors.New("Signature is not set")
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 // VerifySignature verifies that the trade is correct and corresponds
 // to the trade Taker address
-func (t *Trade) VerifySignature() (bool, error) {
-	address, err := t.Signature.Verify(t.Hash)
-	if err != nil {
-		return false, err
-	}
+// func (t *Trade) VerifySignature() (bool, error) {
+// 	address, err := t.Signature.Verify(t.Hash)
+// 	if err != nil {
+// 		return false, err
+// 	}
 
-	if address != t.Taker {
-		return false, errors.New("Recovered address is incorrect")
-	}
+// 	if address != t.Taker {
+// 		return false, errors.New("Recovered address is incorrect")
+// 	}
 
-	return true, nil
-}
+// 	return true, nil
+// }
 
 // MarshalJSON returns the json encoded byte array representing the trade struct
 // func (t *Trade) MarshalJSON() ([]byte, error) {
