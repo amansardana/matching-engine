@@ -3,7 +3,6 @@ package types
 import (
 	"encoding/json"
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/amansardana/matching-engine/utils"
@@ -405,9 +404,12 @@ func (o *Order) GetKVPrefix() string {
 	return o.BuyToken + "::" + o.SellToken
 }
 func (o *Order) GetOBKeys() (ss, list string) {
-	t, _ := o.Type.MarshalJSON()
-	k := strings.ToLower(string(t))
-
+	var k string
+	if o.Type == BUY {
+		k = "buy"
+	} else if o.Type == SELL {
+		k = "sell"
+	}
 	ss = o.GetKVPrefix() + "::" + k
 	list = o.GetKVPrefix() + "::" + k + "::" + utils.UintToPaddedString(o.Price)
 	return
