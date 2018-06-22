@@ -14,6 +14,8 @@ type OrderStatus int
 const (
 	NEW OrderStatus = iota
 	OPEN
+	MATCHED
+	SUBMITTED
 	PARTIAL_FILLED
 	FILLED
 	CANCELLED
@@ -31,6 +33,8 @@ func (orderStatus *OrderStatus) UnmarshalJSON(data []byte) error {
 	value, ok := map[string]OrderStatus{
 		"NEW":            NEW,
 		"OPEN":           OPEN,
+		"MATCHED":        MATCHED,
+		"SUBMITTED":      SUBMITTED,
 		"PARTIAL_FILLED": PARTIAL_FILLED,
 		"FILLED":         FILLED,
 		"CANCELLED":      CANCELLED,
@@ -50,6 +54,8 @@ func (orderStatus *OrderStatus) MarshalJSON() ([]byte, error) {
 	value, ok := map[OrderStatus]string{
 		NEW:            "NEW",
 		OPEN:           "OPEN",
+		MATCHED:        "MATCHED",
+		SUBMITTED:      "SUBMITTED",
 		PARTIAL_FILLED: "PARTIAL_FILLED",
 		FILLED:         "FILLED",
 		CANCELLED:      "CANCELLED",

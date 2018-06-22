@@ -94,14 +94,15 @@ func buildRouter(logger *logrus.Logger) *routing.Router {
 	addressService := services.NewAddressService(addressDao, balanceDao, tokenDao)
 
 	// instantiate engine
-	if _, err := engine.InitEngine(orderDao); err != nil {
+	e, err := engine.InitEngine(orderDao)
+	if err != nil {
 		panic(err)
 	}
 
 	endpoints.ServeTokenResource(rg, tokenService)
 	endpoints.ServePairResource(rg, pairService)
 	endpoints.ServeBalanceResource(rg, balanceService)
-	endpoints.ServeOrderResource(rg, orderService)
+	endpoints.ServeOrderResource(rg, orderService, e)
 	endpoints.ServeAddressResource(rg, addressService)
 	// artistDAO := daos.NewArtistDAO()
 	// apis.ServeArtistResource(rg, services.NewArtistService(artistDAO))

@@ -22,29 +22,34 @@ func (e *EngineResource) matchOrder(order *types.Order) (err error) {
 	} else if order.Type == types.BUY {
 		match, err = e.buyOrder(order)
 	}
-	mab, err := json.Marshal(match)
-	if err != nil {
-		log.Fatalf("%s", err)
-	}
-	fmt.Printf("\n======>\n%s\n<======\n", mab)
+	// mab, err := json.Marshal(match)
+	// if err != nil {
+	// 	log.Fatalf("%s", err)
+	// }
+	// fmt.Printf("\n======>\n%s\n<======\n", mab)
 	// Note: Plug the option for orders like FOC, Limit, OnlyFill (If Required)
 
+	var engineResponse *EngineResponse
 	// If NO_MATCH add to order book
 	if match.FillStatus == NO_MATCH {
-		e.addOrder(order)
+		engineResponse = e.addOrder(order)
 		return
 	}
 
 	// Execute Trade
-	engineResponse, err := e.execute(match)
+	engineResponse, err = e.execute(match)
 	if err != nil {
 		log.Printf("\nexecute XXXXXXX\n%s\nXXXXXXX execute\n", err)
 	}
-	erab, err := json.Marshal(engineResponse)
+	// erab, err := json.Marshal(engineResponse)
+	// if err != nil {
+	// 	log.Fatalf("%s", err)
+	// }
+	// fmt.Printf("\n======> engineResponse\n%s\nengineResponse <======\n", erab)
+	e.publishEngineResponse(engineResponse)
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Printf("\npublishEngineResponse XXXXXXX\n%s\nXXXXXXX publishEngineResponse\n", err)
 	}
-	fmt.Printf("\n======> engineResponse\n%s\nengineResponse <======\n", erab)
 	return
 }
 
@@ -67,7 +72,6 @@ func (e *EngineResource) buyOrder(order *types.Order) (match *Match, err error) 
 	if err := redis.ScanSlice(orders, &priceRange); err != nil {
 		log.Printf("Scan %s\n", err)
 	}
-	fmt.Printf("\n======> priceRange\n%s\npriceRange <======\n", priceRange)
 
 	var filledAmount uint64
 	var orderAmount = order.Amount
@@ -121,8 +125,6 @@ func (e *EngineResource) sellOrder(order *types.Order) (match *Match, err error)
 	match.MatchingOrders = make([]*FillOrder, 0)
 
 	obkv := order.GetOBMatchKey()
-	fmt.Println(obkv)
-	fmt.Println("[" + utils.UintToPaddedString(order.Price))
 	// GET Range of sellOrder between minimum Sell order and order.Price
 	orders, err := redis.Values(e.redisConn.Do("ZREVRANGEBYLEX", obkv, "+", "["+utils.UintToPaddedString(order.Price))) // "ZREVRANGEBYLEX" key max min
 	if err != nil {
@@ -179,7 +181,7 @@ func (e *EngineResource) sellOrder(order *types.Order) (match *Match, err error)
 	return
 }
 
-func (e *EngineResource) addOrder(order *types.Order) {
+func (e *EngineResource) addOrder(order *types.Order) *EngineResponse {
 
 	ssKey, listKey := order.GetOBKeys()
 	res, err := e.redisConn.Do("ZADD", ssKey, "NX", 0, utils.UintToPaddedString(order.Price)) // Add price point to order book
@@ -198,4 +200,13 @@ func (e *EngineResource) addOrder(order *types.Order) {
 		log.Printf("RPUSH: %s", err)
 	}
 	fmt.Printf("RPUSH: %s\n", res)
+
+	response := &EngineResponse{
+		Order:          order,
+		Trades:         nil,
+		FillStatus:     NO_MATCH,
+		MatchingOrders: nil,
+		RemainingOrder: order,
+	}
+	return response
 }

@@ -23,7 +23,9 @@ type EngineResponse struct {
 	Order          *types.Order
 	Trades         []*types.Trade
 	RemainingOrder *types.Order
-	Match          *Match
+
+	FillStatus     FillStatus
+	MatchingOrders []*FillOrder
 }
 
 const (
@@ -127,9 +129,10 @@ func (e *EngineResource) execute(m *Match) (response *EngineResponse, err error)
 	order.FilledAmount = filledAmount
 
 	response = &EngineResponse{
-		Order:  order,
-		Trades: trades,
-		Match:  m,
+		Order:          order,
+		Trades:         trades,
+		FillStatus:     m.FillStatus,
+		MatchingOrders: m.MatchingOrders,
 	}
 	if remainigOrder.Amount != 0 {
 		response.RemainingOrder = &remainigOrder

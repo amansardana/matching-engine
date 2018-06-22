@@ -64,7 +64,68 @@ func (e *EngineResource) PublishOrder(order *types.Order) error {
 	}
 	return nil
 }
+func (e *EngineResource) publishEngineResponse(er *EngineResponse) error {
+	ch := getChannel("erPub")
+	q := getOrderQueue(ch, "engineResponse")
 
+	erAsBytes, err := json.Marshal(er)
+	if err != nil {
+		log.Fatalf("Failed to marshal Engine Response: %s", err)
+		return errors.New("Failed to marshal Engine Response: " + err.Error())
+	}
+
+	err = ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType: "text/json",
+			Body:        erAsBytes,
+		})
+	if err != nil {
+		log.Fatalf("Failed to publish order: %s", err)
+		return errors.New("Failed to publish order: " + err.Error())
+	}
+	return nil
+}
+func (e *EngineResource) SubscribeEngineResponse(fn func(*EngineResponse) error) error {
+	ch := getChannel("erSub")
+	q := getOrderQueue(ch, "engineResponse")
+	go func() {
+		msgs, err := ch.Consume(
+			q.Name, // queue
+			"",     // consumer
+			true,   // auto-ack
+			false,  // exclusive
+			false,  // no-local
+			false,  // no-wait
+			nil,    // args
+		)
+		if err != nil {
+			log.Fatalf("Failed to register a consumer: %s", err)
+
+		}
+
+		forever := make(chan bool)
+
+		go func() {
+			for d := range msgs {
+				// log.Printf("Received a message: %s", d.Body)
+				var er *EngineResponse
+				err := json.Unmarshal(d.Body, &er)
+				if err != nil {
+					log.Printf("error: %s", err)
+				}
+				fn(er)
+			}
+		}()
+
+		log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+		<-forever
+	}()
+	return nil
+}
 func (e *EngineResource) subscribeOrder() error {
 	ch := getChannel("orderSubscribe")
 	q := getOrderQueue(ch, "order")
