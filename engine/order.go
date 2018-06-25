@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
+
+	"github.com/amansardana/matching-engine/ws"
 
 	"github.com/amansardana/matching-engine/types"
 	"github.com/amansardana/matching-engine/utils"
@@ -16,36 +19,88 @@ type FillOrder struct {
 }
 
 func (e *EngineResource) matchOrder(order *types.Order) (err error) {
-	var match *Match
-	if order.Type == types.SELL {
-		match, err = e.sellOrder(order)
-	} else if order.Type == types.BUY {
-		match, err = e.buyOrder(order)
+	engineResponse := &EngineResponse{
+		Order: order,
 	}
-	// mab, err := json.Marshal(match)
-	// if err != nil {
-	// 	log.Fatalf("%s", err)
-	// }
-	// fmt.Printf("\n======>\n%s\n<======\n", mab)
+	engineResponse.Trades = make([]*types.Trade, 0)
+	engineResponse.RemainingOrder = order
+	engineResponse.MatchingOrders = make([]*FillOrder, 0)
+
+	match := &Match{
+		Order: order,
+	}
+
+	// for match.FillStatus != NO_MATCH {
+	if order.Type == types.SELL {
+		err = e.sellOrder(order, match)
+	} else if order.Type == types.BUY {
+		err = e.buyOrder(order, match)
+	}
 	// Note: Plug the option for orders like FOC, Limit, OnlyFill (If Required)
 
-	var engineResponse *EngineResponse
 	// If NO_MATCH add to order book
 	if match.FillStatus == NO_MATCH {
-		engineResponse = e.addOrder(order)
-		return
+		e.addOrder(order)
+		msg := &types.WsMsg{MsgType: "added_to_orderbook"}
+		msg.OrderID = order.ID
+		msg.Data = engineResponse
+		erab, err := json.Marshal(msg)
+		if err != nil {
+			log.Fatalf("%s", err)
+		}
+		ws.Connections[order.ID.Hex()].Conn.WriteMessage(1, erab)
+		return nil
 	}
 
 	// Execute Trade
-	engineResponse, err = e.execute(match)
+	err = e.execute(match, engineResponse)
 	if err != nil {
 		log.Printf("\nexecute XXXXXXX\n%s\nXXXXXXX execute\n", err)
 	}
-	// erab, err := json.Marshal(engineResponse)
-	// if err != nil {
-	// 	log.Fatalf("%s", err)
+	msg := &types.WsMsg{MsgType: "trade_remorder_sign"}
+	msg.OrderID = order.ID
+	msg.Data = engineResponse
+	erab, err := json.Marshal(msg)
+	if err != nil {
+		log.Fatalf("%s", err)
+	}
+
+	ws.Connections[order.ID.Hex()].Conn.WriteMessage(1, erab)
+
+	// for {
+	t := time.NewTimer(5 * time.Second)
+	select {
+	case rm := <-ws.Connections[order.ID.Hex()].ReadChannel:
+		if rm.MsgType == "trade_remorder_sign" {
+			mb, err := json.Marshal(rm.Data)
+			if err != nil {
+				ws.Connections[order.ID.Hex()].Conn.WriteMessage(1, []byte(err.Error()))
+				ws.Connections[order.ID.Hex()].Conn.Close()
+			}
+			var ersb *EngineResponse
+			err = json.Unmarshal(mb, &ersb)
+			if err != nil {
+				ws.Connections[order.ID.Hex()].Conn.WriteMessage(1, []byte(err.Error()))
+				ws.Connections[order.ID.Hex()].Conn.Close()
+			}
+			if engineResponse.FillStatus == PARTIAL {
+				order.OrderBook = &types.OrderSubDoc{Amount: ersb.RemainingOrder.Amount, Signature: ersb.RemainingOrder.Signature}
+				e.addOrder(order)
+			}
+		}
+		t.Stop()
+		break
+	case <-t.C:
+		fmt.Printf("\nTimeout\n")
+		e.recoverOrders(engineResponse.MatchingOrders)
+		engineResponse.FillStatus = ERROR
+		engineResponse.Trades = nil
+		engineResponse.RemainingOrder = nil
+		engineResponse.MatchingOrders = nil
+		t.Stop()
+		break
+	}
 	// }
-	// fmt.Printf("\n======> engineResponse\n%s\nengineResponse <======\n", erab)
 	e.publishEngineResponse(engineResponse)
 	if err != nil {
 		log.Printf("\npublishEngineResponse XXXXXXX\n%s\nXXXXXXX publishEngineResponse\n", err)
@@ -53,12 +108,11 @@ func (e *EngineResource) matchOrder(order *types.Order) (err error) {
 	return
 }
 
-func (e *EngineResource) buyOrder(order *types.Order) (match *Match, err error) {
-	match = &Match{
-		Order:      order,
-		FillStatus: NO_MATCH,
+func (e *EngineResource) buyOrder(order *types.Order, match *Match) (err error) {
+
+	if match.MatchingOrders == nil {
+		match.MatchingOrders = make([]*FillOrder, 0)
 	}
-	match.MatchingOrders = make([]*FillOrder, 0)
 
 	oskv := order.GetOBMatchKey()
 
@@ -83,7 +137,7 @@ func (e *EngineResource) buyOrder(order *types.Order) (match *Match, err error) 
 			reply, err := redis.ByteSlices(e.redisConn.Do("LRANGE", oskv+"::"+utils.UintToPaddedString(pr), 0, -1)) // "ZREVRANGEBYLEX" key max min
 			if err != nil {
 				log.Printf("LRANGE: %s\n", err)
-				return nil, err
+				return err
 			}
 
 			for _, o := range reply {
@@ -91,7 +145,7 @@ func (e *EngineResource) buyOrder(order *types.Order) (match *Match, err error) 
 				err = json.Unmarshal(o, &bookEntry)
 				if err != nil {
 					log.Printf("json.Unmarshal: %s\n", err)
-					return nil, err
+					return err
 				}
 
 				match.FillStatus = PARTIAL
@@ -109,7 +163,7 @@ func (e *EngineResource) buyOrder(order *types.Order) (match *Match, err error) 
 				if filledAmount == orderAmount {
 					match.FillStatus = FULL
 					// order filled return
-					return match, nil
+					return nil
 				}
 			}
 		}
@@ -117,12 +171,10 @@ func (e *EngineResource) buyOrder(order *types.Order) (match *Match, err error) 
 	return
 }
 
-func (e *EngineResource) sellOrder(order *types.Order) (match *Match, err error) {
-	match = &Match{
-		Order:      order,
-		FillStatus: NO_MATCH,
+func (e *EngineResource) sellOrder(order *types.Order, match *Match) (err error) {
+	if match.MatchingOrders == nil {
+		match.MatchingOrders = make([]*FillOrder, 0)
 	}
-	match.MatchingOrders = make([]*FillOrder, 0)
 
 	obkv := order.GetOBMatchKey()
 	// GET Range of sellOrder between minimum Sell order and order.Price
@@ -147,7 +199,7 @@ func (e *EngineResource) sellOrder(order *types.Order) (match *Match, err error)
 			reply, err := redis.ByteSlices(e.redisConn.Do("LRANGE", obkv+"::"+utils.UintToPaddedString(pr), 0, -1)) // "ZREVRANGEBYLEX" key max min
 			if err != nil {
 				log.Printf("LRANGE: %s\n", err)
-				return nil, err
+				return err
 			}
 
 			for _, o := range reply {
@@ -155,7 +207,7 @@ func (e *EngineResource) sellOrder(order *types.Order) (match *Match, err error)
 				err = json.Unmarshal(o, &bookEntry)
 				if err != nil {
 					log.Printf("json.Unmarshal: %s\n", err)
-					return nil, err
+					return err
 				}
 
 				match.FillStatus = PARTIAL
@@ -173,7 +225,7 @@ func (e *EngineResource) sellOrder(order *types.Order) (match *Match, err error)
 				if filledAmount == orderAmount {
 					match.FillStatus = FULL
 					// order filled return
-					return match, nil
+					return nil
 				}
 			}
 		}
@@ -181,7 +233,7 @@ func (e *EngineResource) sellOrder(order *types.Order) (match *Match, err error)
 	return
 }
 
-func (e *EngineResource) addOrder(order *types.Order) *EngineResponse {
+func (e *EngineResource) addOrder(order *types.Order) {
 
 	ssKey, listKey := order.GetOBKeys()
 	res, err := e.redisConn.Do("ZADD", ssKey, "NX", 0, utils.UintToPaddedString(order.Price)) // Add price point to order book
@@ -201,12 +253,11 @@ func (e *EngineResource) addOrder(order *types.Order) *EngineResponse {
 	}
 	fmt.Printf("RPUSH: %s\n", res)
 
-	response := &EngineResponse{
-		Order:          order,
-		Trades:         nil,
-		FillStatus:     NO_MATCH,
-		MatchingOrders: nil,
-		RemainingOrder: order,
+	return
+}
+
+func (e *EngineResource) recoverOrders(orders []*FillOrder) {
+	for _, o := range orders {
+		e.addOrder(o.Order)
 	}
-	return response
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/amansardana/matching-engine/engine"
 	"github.com/amansardana/matching-engine/services"
 	"github.com/amansardana/matching-engine/types"
+	"github.com/amansardana/matching-engine/ws"
 	"github.com/go-ozzo/ozzo-routing"
 	"github.com/gorilla/websocket"
 )
@@ -31,7 +32,7 @@ func ServeOrderResource(rg *routing.RouteGroup, orderService *services.OrderServ
 	// rg.Get("/orders/<id>", r.get)
 	// rg.Get("/orders", r.query)
 	rg.Post("/orders", r.create)
-	rg.Any("/orders/ws", r.ws)
+	http.HandleFunc("/orders/ws", r.ws)
 	e.SubscribeEngineResponse(r.engineResponse)
 }
 
@@ -54,22 +55,69 @@ func (r *orderEndpoint) create(c *routing.Context) error {
 
 	return c.Write(order)
 }
-func (r *orderEndpoint) ws(c *routing.Context) error {
-	conn, err := upgrader.Upgrade(c.Response, c.Request, nil)
+func (r *orderEndpoint) ws(w http.ResponseWriter, req *http.Request) {
+	conn, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {
 		log.Println("==>" + err.Error())
-		return nil
+		return
 	}
-	messageType, p, err := conn.ReadMessage()
-	if err != nil {
-		log.Println("<==>" + err.Error())
-		return nil
+
+	// go func() {
+	ch := make(chan *types.WsMsg)
+	for {
+		messageType, p, err := conn.ReadMessage()
+		if err != nil {
+			log.Println("<==>" + err.Error())
+			conn.Close()
+
+			return
+		}
+		var msg *types.WsMsg
+		if err := json.Unmarshal(p, &msg); err != nil {
+			log.Println("unmarshal to wsmsg <==>" + err.Error())
+			conn.Close()
+
+			return
+		}
+		if msg.MsgType == "new_order" {
+			oab, err := json.Marshal(msg.Data)
+
+			var model types.OrderRequest
+			if err := json.Unmarshal(oab, &model); err != nil {
+				conn.WriteMessage(messageType, []byte(err.Error()))
+				conn.Close()
+
+				return
+			}
+			if err := model.Validate(); err != nil {
+				conn.WriteMessage(messageType, []byte(err.Error()))
+				conn.Close()
+
+				return
+			}
+			order, err := model.ToOrder()
+			if err != nil {
+				conn.WriteMessage(messageType, []byte(err.Error()))
+				conn.Close()
+
+				return
+			}
+			err = r.orderService.Create(order)
+			if err != nil {
+				conn.WriteMessage(messageType, []byte(err.Error()))
+				conn.Close()
+				return
+			}
+			oab, _ = json.Marshal(order)
+			conn.WriteMessage(messageType, oab)
+			if ws.Connections == nil {
+				ws.Connections = make(map[string]*ws.Ws)
+			}
+			ws.Connections[order.ID.Hex()] = &ws.Ws{Conn: conn, ReadChannel: ch}
+		} else {
+			ws.Connections[msg.OrderID.Hex()].ReadChannel <- msg
+		}
 	}
-	if err := conn.WriteMessage(messageType, p); err != nil {
-		log.Println("<<==>>" + err.Error())
-		return nil
-	}
-	return nil
 }
 
 func (r *orderEndpoint) engineResponse(er *engine.EngineResponse) error {

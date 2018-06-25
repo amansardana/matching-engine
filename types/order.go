@@ -119,9 +119,15 @@ type Order struct {
 	PairName         string        `json:"pairName" bson:"pairName" redis:"pairName"`
 	Hash             string        `json:"hash" bson:"hash" redis:"hash"`
 	UserAddress      string        `json:"userAddress" bson:"userAddress" redis:"userAddress"`
+	OrderBook        *OrderSubDoc  `json:"orderBook" bson:"orderBook"`
 
 	CreatedAt time.Time `json:"createdAt" bson:"createdAt" redis:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt" bson:"updatedAt" redis:"updatedAt"`
+}
+
+type OrderSubDoc struct {
+	Amount    uint64     `json:"amount" bson:"amount"`
+	Signature *Signature `json:"signature,omitempty" bson:"signature" redis:"signature"`
 }
 
 // func (o *Order) MarshalJSON() ([]byte, error) {

@@ -41,7 +41,6 @@ func main() {
 	if err := daos.InitSession(); err != nil {
 		panic(err)
 	}
-	// db.LogFunc = logger.Infof
 
 	// wire up API routing
 	http.Handle("/", buildRouter(logger))

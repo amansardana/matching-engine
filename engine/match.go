@@ -33,19 +33,19 @@ const (
 	NO_MATCH
 	PARTIAL
 	FULL
+	ERROR
 )
 
-func (e *EngineResource) execute(m *Match) (response *EngineResponse, err error) {
+func (e *EngineResource) execute(m *Match, er *EngineResponse) (err error) {
 
 	if m == nil {
 		err = errors.New("No match passed")
 		return
 	}
 
-	trades := make([]*types.Trade, 0)
 	var filledAmount uint64
 
-	order := m.Order
+	order := er.Order
 	MatchedOrders := m.MatchingOrders
 	remainigOrder := *order
 
@@ -56,19 +56,19 @@ func (e *EngineResource) execute(m *Match) (response *EngineResponse, err error)
 		reply, err := redis.Bytes(e.redisConn.Do("LPOP", list)) // "ZREVRANGEBYLEX" key max min
 		if err != nil {
 			log.Printf("LPOP: %s\n", err)
-			return nil, err
+			return err
 		}
 
 		var bookEntry types.Order
 		err = json.Unmarshal(reply, &bookEntry)
 		if err != nil {
 			log.Printf("json.Unmarshal: %s\n", err)
-			return nil, err
+			return err
 		}
 
 		if bookEntry.ID != mo.ID {
 			log.Fatal("Invalid matching order passed: ", bookEntry.ID, mo.ID, list)
-			return nil, errors.New("Invalid matching order passed")
+			return errors.New("Invalid matching order passed")
 		}
 		filledAmount = filledAmount + o.Amount
 		remainigOrder.Amount = remainigOrder.Amount - o.Amount
@@ -86,7 +86,7 @@ func (e *EngineResource) execute(m *Match) (response *EngineResponse, err error)
 		// TODO: Implement compute hash functions
 		// t.Hash = t.ComputeHash()
 
-		trades = append(trades, t)
+		er.Trades = append(er.Trades, t)
 
 		// If book entry order is not filled completely then update the filledAmount and push it back to the head of list
 
@@ -113,14 +113,14 @@ func (e *EngineResource) execute(m *Match) (response *EngineResponse, err error)
 			_, err := e.redisConn.Do("del", list)
 			if err != nil {
 				log.Printf("del: %s", err)
-				return nil, err
+				return err
 			}
 			// fmt.Printf("del: %s", res)
 
 			_, err = e.redisConn.Do("ZREM", ss, utils.UintToPaddedString(mo.Price))
 			if err != nil {
 				log.Printf("ZREM: %s", err)
-				return nil, err
+				return err
 			}
 			// fmt.Printf("ZREM: %s", res)
 		}
@@ -128,14 +128,13 @@ func (e *EngineResource) execute(m *Match) (response *EngineResponse, err error)
 
 	order.FilledAmount = filledAmount
 
-	response = &EngineResponse{
-		Order:          order,
-		Trades:         trades,
-		FillStatus:     m.FillStatus,
-		MatchingOrders: m.MatchingOrders,
-	}
+	er.MatchingOrders = append(er.MatchingOrders, m.MatchingOrders...)
 	if remainigOrder.Amount != 0 {
-		response.RemainingOrder = &remainigOrder
+		er.FillStatus = PARTIAL
+		er.RemainingOrder = &remainigOrder
+	} else {
+		er.FillStatus = FULL
+		er.RemainingOrder = nil
 	}
 	return
 }
