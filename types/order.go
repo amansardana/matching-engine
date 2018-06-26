@@ -21,6 +21,7 @@ const (
 	CANCELLED
 	PENDING
 	INVALID_ORDER
+	ERROR
 )
 
 func (orderStatus *OrderStatus) UnmarshalJSON(data []byte) error {
@@ -40,6 +41,7 @@ func (orderStatus *OrderStatus) UnmarshalJSON(data []byte) error {
 		"CANCELLED":      CANCELLED,
 		"PENDING":        PENDING,
 		"INVALID_ORDER":  INVALID_ORDER,
+		"ERROR":          ERROR,
 	}[s]
 	if !ok {
 		return errors.New("Invalid Enum Status Value")
@@ -61,6 +63,7 @@ func (orderStatus *OrderStatus) MarshalJSON() ([]byte, error) {
 		CANCELLED:      "CANCELLED",
 		PENDING:        "PENDING",
 		INVALID_ORDER:  "INVALID_ORDER",
+		ERROR:          "ERROR",
 	}[*orderStatus]
 	if !ok {
 		return nil, errors.New("Invalid Enum Type")
@@ -105,13 +108,13 @@ type Order struct {
 	SellToken        string        `json:"sellToken" bson:"sellToken" redis:"sellToken"`
 	BuyTokenAddress  string        `json:"buyTokenAddress" bson:"buyTokenAddress" redis:"buyTokenAddress"`
 	SellTokenAddress string        `json:"sellTokenAddress" bson:"sellTokenAddress" redis:"sellTokenAddress"`
-	FilledAmount     uint64        `json:"filledAmount" bson:"filledAmount" redis:"filledAmount"`
-	Amount           uint64        `json:"amount" bson:"amount" redis:"amount"`
-	Price            uint64        `json:"price" bson:"price" redis:"price"`
-	Fee              uint64        `json:"fee" bson:"fee" redis:"fee"`
+	FilledAmount     int64         `json:"filledAmount" bson:"filledAmount" redis:"filledAmount"`
+	Amount           int64         `json:"amount" bson:"amount" redis:"amount"`
+	Price            int64         `json:"price" bson:"price" redis:"price"`
+	Fee              int64         `json:"fee" bson:"fee" redis:"fee"`
 	Type             OrderType     `json:"type" bson:"type" redis:"type"`
-	AmountBuy        uint64        `json:"amountBuy" bson:"amountBuy" redis:"amountBuy"`
-	AmountSell       uint64        `json:"amountSell" bson:"amountSell" redis:"amountSell"`
+	AmountBuy        int64         `json:"amountBuy" bson:"amountBuy" redis:"amountBuy"`
+	AmountSell       int64         `json:"amountSell" bson:"amountSell" redis:"amountSell"`
 	ExchangeAddress  string        `json:"exchangeAddress" bson:"exchangeAddress" redis:"exchangeAddress"`
 	Status           OrderStatus   `json:"status" bson:"status" redis:"status"`
 	Signature        *Signature    `json:"signature,omitempty" bson:"signature" redis:"signature"`
@@ -126,7 +129,7 @@ type Order struct {
 }
 
 type OrderSubDoc struct {
-	Amount    uint64     `json:"amount" bson:"amount"`
+	Amount    int64      `json:"amount" bson:"amount"`
 	Signature *Signature `json:"signature,omitempty" bson:"signature" redis:"signature"`
 }
 
@@ -218,14 +221,14 @@ type OrderSubDoc struct {
 // 	if order["id"] == nil {
 // 		return errors.New("Order ID not set")
 // 	}
-// 	// o.ID = uint64(order["id"].(float64))
+// 	// o.ID = int64(order["id"].(float64))
 
 // 	if order["price"] != nil {
-// 		o.Price = uint64(order["price"].(float64))
+// 		o.Price = int64(order["price"].(float64))
 // 	}
 
 // 	if order["amount"] != nil {
-// 		o.Amount = uint64(order["amount"].(float64))
+// 		o.Amount = int64(order["amount"].(float64))
 // 	}
 
 // o.ExchangeAddress = HexToAddress(order["exchangeAddress"].(string))

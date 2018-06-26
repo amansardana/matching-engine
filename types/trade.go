@@ -5,10 +5,10 @@ package types
 // the trade signature must be made from the trader Maker account
 type Trade struct {
 	OrderHash  string     `json:"orderHash"`
-	Amount     uint64     `json:"amount"`
-	Price      uint64     `json:"price"`
+	Amount     int64      `json:"amount"`
+	Price      int64      `json:"price"`
 	Type       OrderType  `json:"type"`
-	TradeNonce uint64     `json:"tradeNonce"`
+	TradeNonce int64      `json:"tradeNonce"`
 	Taker      string     `json:"taker"`
 	Signature  *Signature `json:"signature"`
 	Hash       string     `json:"hash"`
@@ -16,7 +16,7 @@ type Trade struct {
 }
 
 // NewTrade returns a new unsigned trade corresponding to an Order, amount and taker address
-func NewTrade(o *Order, amount uint64, price uint64, taker string) *Trade {
+func NewTrade(o *Order, amount int64, price int64, taker string) *Trade {
 	t := &Trade{
 		OrderHash:  o.Hash,
 		PairName:   o.PairName,

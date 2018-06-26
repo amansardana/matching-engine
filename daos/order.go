@@ -32,7 +32,11 @@ func (dao *OrderDao) GetAll() (response []types.Order, err error) {
 	err = DB.Get(dao.dbName, dao.collectionName, bson.M{}, 0, 0, &response)
 	return
 }
-
+func (dao *OrderDao) Update(id bson.ObjectId, order *types.Order) (response []types.Order, err error) {
+	order.UpdatedAt = time.Now()
+	err = DB.Update(dao.dbName, dao.collectionName, bson.M{"_id": id}, order)
+	return
+}
 func (dao *OrderDao) GetByID(id bson.ObjectId) (response *types.Order, err error) {
 	err = DB.GetByID(dao.dbName, dao.collectionName, id, &response)
 	return

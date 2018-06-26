@@ -123,5 +123,6 @@ func (r *orderEndpoint) ws(w http.ResponseWriter, req *http.Request) {
 func (r *orderEndpoint) engineResponse(er *engine.EngineResponse) error {
 	b, _ := json.Marshal(er)
 	fmt.Printf("\n======> \n%s\n <======\n", b)
+	r.orderService.UpdateUsingEngineResponse(er)
 	return nil
 }

@@ -43,11 +43,10 @@ func (e *EngineResource) execute(m *Match, er *EngineResponse) (err error) {
 		return
 	}
 
-	var filledAmount uint64
+	var filledAmount int64
 
 	order := er.Order
 	MatchedOrders := m.MatchingOrders
-	remainigOrder := *order
 
 	for i, o := range MatchedOrders {
 		mo := o.Order
@@ -70,8 +69,9 @@ func (e *EngineResource) execute(m *Match, er *EngineResponse) (err error) {
 			log.Fatal("Invalid matching order passed: ", bookEntry.ID, mo.ID, list)
 			return errors.New("Invalid matching order passed")
 		}
+		bookEntry.FilledAmount = bookEntry.FilledAmount + o.Amount
+
 		filledAmount = filledAmount + o.Amount
-		remainigOrder.Amount = remainigOrder.Amount - o.Amount
 
 		// Create trade object to be passed to the system for further processing
 		t := &types.Trade{
@@ -79,7 +79,7 @@ func (e *EngineResource) execute(m *Match, er *EngineResponse) (err error) {
 			Price:      order.Price,
 			OrderHash:  mo.Hash,
 			Type:       order.Type,
-			TradeNonce: uint64(i),
+			TradeNonce: int64(i),
 			Taker:      order.UserAddress,
 			PairName:   order.PairName,
 		}
@@ -90,8 +90,7 @@ func (e *EngineResource) execute(m *Match, er *EngineResponse) (err error) {
 
 		// If book entry order is not filled completely then update the filledAmount and push it back to the head of list
 
-		if (bookEntry.Amount - bookEntry.FilledAmount) > o.Amount {
-			bookEntry.FilledAmount = bookEntry.FilledAmount + o.Amount
+		if (bookEntry.Amount - bookEntry.FilledAmount) > 0 {
 			bookEntryAsBytes, err := json.Marshal(bookEntry)
 			if err != nil {
 				log.Printf("json.Marshal: %s", err)
@@ -103,9 +102,17 @@ func (e *EngineResource) execute(m *Match, er *EngineResponse) (err error) {
 			fmt.Println("LPUSH: ", res)
 		}
 
+		if bookEntry.FilledAmount == bookEntry.Amount {
+			bookEntry.Status = types.FILLED
+		} else {
+			bookEntry.Status = types.PARTIAL_FILLED
+		}
+
+		er.MatchingOrders = append(er.MatchingOrders, &FillOrder{o.Amount, &bookEntry})
+
 		// Get length of remaining orders in the list
 
-		l, err := redis.Uint64(e.redisConn.Do("LLEN", list))
+		l, err := redis.Int64(e.redisConn.Do("LLEN", list))
 		if err != nil {
 			log.Printf("LLEN: %s", err)
 		} else if l == 0 {
@@ -128,11 +135,15 @@ func (e *EngineResource) execute(m *Match, er *EngineResponse) (err error) {
 
 	order.FilledAmount = filledAmount
 
-	er.MatchingOrders = append(er.MatchingOrders, m.MatchingOrders...)
-	if remainigOrder.Amount != 0 {
+	if order.Amount != order.FilledAmount {
+		er.Order.Status = types.PARTIAL_FILLED
 		er.FillStatus = PARTIAL
-		er.RemainingOrder = &remainigOrder
+		remOrder := *order
+		remOrder.Amount = order.Amount - order.FilledAmount
+		remOrder.FilledAmount = 0
+		er.RemainingOrder = &remOrder
 	} else {
+		er.Order.Status = types.FILLED
 		er.FillStatus = FULL
 		er.RemainingOrder = nil
 	}

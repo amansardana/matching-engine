@@ -51,7 +51,7 @@ func (dao *BalanceDao) GetByAddress(addr string) (response *types.Balance, err e
 	return
 }
 
-func (dao *BalanceDao) LockFunds(address string, token string, amount *types.TokenBalance) (err error) {
+func (dao *BalanceDao) UpdateAmount(address string, token string, amount *types.TokenBalance) (err error) {
 	q := bson.M{"address": address}
 	updateQuery := bson.M{
 		"$set": bson.M{
@@ -62,3 +62,15 @@ func (dao *BalanceDao) LockFunds(address string, token string, amount *types.Tok
 	err = DB.Update(dao.dbName, dao.collectionName, q, updateQuery)
 	return
 }
+
+// func (dao *BalanceDao) UnlockFunds(address string, token string, amount *types.TokenBalance) (err error) {
+// 	q := bson.M{"address": address}
+// 	updateQuery := bson.M{
+// 		"$set": bson.M{
+// 			"tokens." + token: amount,
+// 		},
+// 	}
+
+// 	err = DB.Update(dao.dbName, dao.collectionName, q, updateQuery)
+// 	return
+// }

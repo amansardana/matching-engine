@@ -14,7 +14,7 @@ import (
 )
 
 type FillOrder struct {
-	Amount uint64
+	Amount int64
 	Order  *types.Order
 }
 
@@ -40,6 +40,7 @@ func (e *EngineResource) matchOrder(order *types.Order) (err error) {
 
 	// If NO_MATCH add to order book
 	if match.FillStatus == NO_MATCH {
+		engineResponse.Order.Status = types.OPEN
 		e.addOrder(order)
 		msg := &types.WsMsg{MsgType: "added_to_orderbook"}
 		msg.OrderID = order.ID
@@ -49,58 +50,59 @@ func (e *EngineResource) matchOrder(order *types.Order) (err error) {
 			log.Fatalf("%s", err)
 		}
 		ws.Connections[order.ID.Hex()].Conn.WriteMessage(1, erab)
-		return nil
-	}
 
-	// Execute Trade
-	err = e.execute(match, engineResponse)
-	if err != nil {
-		log.Printf("\nexecute XXXXXXX\n%s\nXXXXXXX execute\n", err)
-	}
-	msg := &types.WsMsg{MsgType: "trade_remorder_sign"}
-	msg.OrderID = order.ID
-	msg.Data = engineResponse
-	erab, err := json.Marshal(msg)
-	if err != nil {
-		log.Fatalf("%s", err)
-	}
+	} else {
 
-	ws.Connections[order.ID.Hex()].Conn.WriteMessage(1, erab)
-
-	// for {
-	t := time.NewTimer(5 * time.Second)
-	select {
-	case rm := <-ws.Connections[order.ID.Hex()].ReadChannel:
-		if rm.MsgType == "trade_remorder_sign" {
-			mb, err := json.Marshal(rm.Data)
-			if err != nil {
-				ws.Connections[order.ID.Hex()].Conn.WriteMessage(1, []byte(err.Error()))
-				ws.Connections[order.ID.Hex()].Conn.Close()
-			}
-			var ersb *EngineResponse
-			err = json.Unmarshal(mb, &ersb)
-			if err != nil {
-				ws.Connections[order.ID.Hex()].Conn.WriteMessage(1, []byte(err.Error()))
-				ws.Connections[order.ID.Hex()].Conn.Close()
-			}
-			if engineResponse.FillStatus == PARTIAL {
-				order.OrderBook = &types.OrderSubDoc{Amount: ersb.RemainingOrder.Amount, Signature: ersb.RemainingOrder.Signature}
-				e.addOrder(order)
-			}
+		// Execute Trade
+		err = e.execute(match, engineResponse)
+		if err != nil {
+			log.Printf("\nexecute XXXXXXX\n%s\nXXXXXXX execute\n", err)
 		}
-		t.Stop()
-		break
-	case <-t.C:
-		fmt.Printf("\nTimeout\n")
-		e.recoverOrders(engineResponse.MatchingOrders)
-		engineResponse.FillStatus = ERROR
-		engineResponse.Trades = nil
-		engineResponse.RemainingOrder = nil
-		engineResponse.MatchingOrders = nil
-		t.Stop()
-		break
+		msg := &types.WsMsg{MsgType: "trade_remorder_sign"}
+		msg.OrderID = order.ID
+		msg.Data = engineResponse
+		erab, err := json.Marshal(msg)
+		if err != nil {
+			log.Fatalf("%s", err)
+		}
+
+		ws.Connections[order.ID.Hex()].Conn.WriteMessage(1, erab)
+
+		// for {
+		t := time.NewTimer(5 * time.Second)
+		select {
+		case rm := <-ws.Connections[order.ID.Hex()].ReadChannel:
+			if rm.MsgType == "trade_remorder_sign" {
+				mb, err := json.Marshal(rm.Data)
+				if err != nil {
+					ws.Connections[order.ID.Hex()].Conn.WriteMessage(1, []byte(err.Error()))
+					ws.Connections[order.ID.Hex()].Conn.Close()
+				}
+				var ersb *EngineResponse
+				err = json.Unmarshal(mb, &ersb)
+				if err != nil {
+					ws.Connections[order.ID.Hex()].Conn.WriteMessage(1, []byte(err.Error()))
+					ws.Connections[order.ID.Hex()].Conn.Close()
+				}
+				if engineResponse.FillStatus == PARTIAL {
+					order.OrderBook = &types.OrderSubDoc{Amount: ersb.RemainingOrder.Amount, Signature: ersb.RemainingOrder.Signature}
+					e.addOrder(order)
+				}
+			}
+			t.Stop()
+			break
+		case <-t.C:
+			fmt.Printf("\nTimeout\n")
+			e.recoverOrders(engineResponse.MatchingOrders)
+			engineResponse.FillStatus = ERROR
+			engineResponse.Order.Status = types.ERROR
+			engineResponse.Trades = nil
+			engineResponse.RemainingOrder = nil
+			engineResponse.MatchingOrders = nil
+			t.Stop()
+			break
+		}
 	}
-	// }
 	e.publishEngineResponse(engineResponse)
 	if err != nil {
 		log.Printf("\npublishEngineResponse XXXXXXX\n%s\nXXXXXXX publishEngineResponse\n", err)
@@ -122,12 +124,12 @@ func (e *EngineResource) buyOrder(order *types.Order, match *Match) (err error) 
 		log.Printf("ZREVRANGEBYLEX: %s\n", err)
 		return
 	}
-	priceRange := make([]uint64, 0)
+	priceRange := make([]int64, 0)
 	if err := redis.ScanSlice(orders, &priceRange); err != nil {
 		log.Printf("Scan %s\n", err)
 	}
 
-	var filledAmount uint64
+	var filledAmount int64
 	var orderAmount = order.Amount
 
 	if len(priceRange) == 0 {
@@ -184,12 +186,12 @@ func (e *EngineResource) sellOrder(order *types.Order, match *Match) (err error)
 		return
 	}
 
-	priceRange := make([]uint64, 0)
+	priceRange := make([]int64, 0)
 	if err := redis.ScanSlice(orders, &priceRange); err != nil {
 		log.Printf("Scan %s\n", err)
 	}
 
-	var filledAmount uint64
+	var filledAmount int64
 	var orderAmount = order.Amount
 
 	if len(priceRange) == 0 {

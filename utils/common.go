@@ -4,6 +4,6 @@ import (
 	"fmt"
 )
 
-func UintToPaddedString(num uint64) string {
+func UintToPaddedString(num int64) string {
 	return fmt.Sprintf("%019d", num)
 }

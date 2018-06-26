@@ -54,7 +54,7 @@ func (w *Wallet) GetPrivateKey() string {
 // NewOrder (DEPRECATED - use the order factory instead) creates a new
 // order from a wallet, compute the order hash and signs it with the
 // wallet private key
-func (w *Wallet) NewOrder(id, amountBuy, amountSell uint64, p TokenPair, ot OrderType) (*Order, error) {
+func (w *Wallet) NewOrder(id, amountBuy, amountSell int64, p TokenPair, ot OrderType) (*Order, error) {
 	o := &Order{}
 	tokenBuy := Token{}
 	tokenSell := Token{}
@@ -99,7 +99,7 @@ func (w *Wallet) NewOrder(id, amountBuy, amountSell uint64, p TokenPair, ot Orde
 // NewTrade (DEPRECATED - use the order factory instead) creates a new
 // trade from a wallet and a given order, compute the trade hash and
 // signs it with the wallet private key
-func (w *Wallet) NewTrade(o *Order, amount uint64) (*Trade, error) {
+func (w *Wallet) NewTrade(o *Order, amount int64) (*Trade, error) {
 	trade := &Trade{}
 
 	trade.OrderHash = o.Hash

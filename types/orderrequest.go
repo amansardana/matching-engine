@@ -39,14 +39,14 @@ func (m *OrderRequest) ToOrder() (order *Order, err error) {
 
 	order = &Order{
 		Type:        OrderType(m.Type),
-		Amount:      uint64(m.Amount * math.Pow10(8)),
-		Price:       uint64(m.Price * math.Pow10(8)),
-		Fee:         uint64(m.Amount * m.Price * (app.Config.TakeFee / 100) * math.Pow10(8)), // amt*price + amt*price*takeFee/100
+		Amount:      int64(m.Amount * math.Pow10(8)),
+		Price:       int64(m.Price * math.Pow10(8)),
+		Fee:         int64(m.Amount * m.Price * (app.Config.TakeFee / 100) * math.Pow10(8)), // amt*price + amt*price*takeFee/100
 		PairName:    m.PairName,
 		UserAddress: m.UserAddress,
 
-		AmountBuy:  uint64(m.Amount * math.Pow10(8)),
-		AmountSell: uint64(m.Amount * m.Price * math.Pow10(8)),
+		AmountBuy:  int64(m.Amount * math.Pow10(8)),
+		AmountSell: int64(m.Amount * m.Price * math.Pow10(8)),
 	}
 	return
 }

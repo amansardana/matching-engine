@@ -19,8 +19,8 @@ type Balance struct {
 
 type TokenBalance struct {
 	TokenID      bson.ObjectId `json:"tokenId" bson:"tokenId"`
-	Amount       uint64        `json:"amount" bson:"amount"`
-	LockedAmount uint64        `json:"lockedAmount" bson:"lockedAmount"`
+	Amount       int64         `json:"amount" bson:"amount"`
+	LockedAmount int64         `json:"lockedAmount" bson:"lockedAmount"`
 }
 
 // NewBalance returns a new wallet object corresponding to a random private key

@@ -25,7 +25,7 @@ func (s *BalanceService) Create(balance *types.Balance) error {
 		return err
 	}
 	for _, token := range tokens {
-		tb[token.Symbol] = types.TokenBalance{Amount: uint64(10000 * math.Pow10(8)), LockedAmount: 0, TokenID: token.ID}
+		tb[token.Symbol] = types.TokenBalance{Amount: int64(10000 * math.Pow10(8)), LockedAmount: 0, TokenID: token.ID}
 	}
 	balance.Tokens = tb
 	err = s.balanceDao.Create(balance)
