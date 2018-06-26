@@ -75,13 +75,16 @@ func (e *EngineResource) execute(m *Match, er *EngineResponse) (err error) {
 
 		// Create trade object to be passed to the system for further processing
 		t := &types.Trade{
-			Amount:     o.Amount,
-			Price:      order.Price,
-			OrderHash:  mo.Hash,
-			Type:       order.Type,
-			TradeNonce: int64(i),
-			Taker:      order.UserAddress,
-			PairName:   order.PairName,
+			Amount:       o.Amount,
+			Price:        order.Price,
+			OrderHash:    mo.Hash,
+			Type:         order.Type,
+			TradeNonce:   int64(i),
+			Taker:        order.UserAddress,
+			PairName:     order.PairName,
+			Maker:        mo.UserAddress,
+			TakerOrderID: order.ID,
+			MakerOrderID: mo.ID,
 		}
 		// TODO: Implement compute hash functions
 		// t.Hash = t.ComputeHash()

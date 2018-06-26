@@ -41,3 +41,8 @@ func (dao *OrderDao) GetByID(id bson.ObjectId) (response *types.Order, err error
 	err = DB.GetByID(dao.dbName, dao.collectionName, id, &response)
 	return
 }
+func (dao *OrderDao) GetByUserAddress(addr string) (response []*types.Order, err error) {
+	q := bson.M{"userAddress": addr}
+	err = DB.Get(dao.dbName, dao.collectionName, q, 0, 0, &response)
+	return
+}

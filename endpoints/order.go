@@ -6,6 +6,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/amansardana/matching-engine/errors"
+	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/amansardana/matching-engine/engine"
 	"github.com/amansardana/matching-engine/services"
 	"github.com/amansardana/matching-engine/types"
@@ -29,32 +32,25 @@ var upgrader = websocket.Upgrader{
 // ServeOrder sets up the routing of order endpoints and the corresponding handlers.
 func ServeOrderResource(rg *routing.RouteGroup, orderService *services.OrderService, e *engine.EngineResource) {
 	r := &orderEndpoint{orderService}
-	// rg.Get("/orders/<id>", r.get)
+	rg.Get("/orders/<addr>", r.get)
 	// rg.Get("/orders", r.query)
-	rg.Post("/orders", r.create)
+	// rg.Post("/orders", r.create)
 	http.HandleFunc("/orders/ws", r.ws)
 	e.SubscribeEngineResponse(r.engineResponse)
 }
 
-func (r *orderEndpoint) create(c *routing.Context) error {
-	var model types.OrderRequest
-	if err := c.Read(&model); err != nil {
-		return err
+func (r *orderEndpoint) get(c *routing.Context) error {
+	address := c.Param("addr")
+	if !common.IsHexAddress(address) {
+		return errors.NewAPIError(400, "Invalid Adrress", map[string]interface{}{})
 	}
-	if err := model.Validate(); err != nil {
-		return err
-	}
-	order, err := model.ToOrder()
+	orders, err := r.orderService.GetByUserAddress(address)
 	if err != nil {
-		return err
+		return errors.NewAPIError(400, "Fetch Error", map[string]interface{}{})
 	}
-	err = r.orderService.Create(order)
-	if err != nil {
-		return err
-	}
-
-	return c.Write(order)
+	return c.Write(orders)
 }
+
 func (r *orderEndpoint) ws(w http.ResponseWriter, req *http.Request) {
 	conn, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {

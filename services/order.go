@@ -17,10 +17,11 @@ type OrderService struct {
 	orderDao   *daos.OrderDao
 	balanceDao *daos.BalanceDao
 	pairDao    *daos.PairDao
+	tradeDao   *daos.TradeDao
 }
 
-func NewOrderService(orderDao *daos.OrderDao, balanceDao *daos.BalanceDao, pairDao *daos.PairDao) *OrderService {
-	return &OrderService{orderDao, balanceDao, pairDao}
+func NewOrderService(orderDao *daos.OrderDao, balanceDao *daos.BalanceDao, pairDao *daos.PairDao, tradeDao *daos.TradeDao) *OrderService {
+	return &OrderService{orderDao, balanceDao, pairDao, tradeDao}
 }
 
 func (s *OrderService) Create(order *types.Order) (err error) {
@@ -87,6 +88,9 @@ func (s *OrderService) Create(order *types.Order) (err error) {
 
 func (s *OrderService) GetByID(id bson.ObjectId) (*types.Order, error) {
 	return s.orderDao.GetByID(id)
+}
+func (s *OrderService) GetByUserAddress(address string) ([]*types.Order, error) {
+	return s.orderDao.GetByUserAddress(address)
 }
 func (s *OrderService) GetAll() ([]types.Order, error) {
 	return s.orderDao.GetAll()
@@ -218,6 +222,10 @@ func (s *OrderService) UpdateUsingEngineResponse(er *engine.EngineResponse) {
 				fmt.Printf("\n Match Sell\n==>sbal: %s \n==>bbal: %s\n==>Unlock Amount: %d\n", sbal, bbal, mo.Amount)
 
 			}
+		}
+		err := s.tradeDao.Create(er.Trades...)
+		if err != nil {
+			log.Fatalf("\n Error adding trades to db: %s\n", err)
 		}
 	}
 }

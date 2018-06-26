@@ -1,18 +1,30 @@
 package types
 
+import (
+	"time"
+
+	"labix.org/v2/mgo/bson"
+)
+
 // Trade struct holds arguments corresponding to a "Taker Order"
 // To be valid an accept by the matching engine (and ultimately the exchange smart-contract),
 // the trade signature must be made from the trader Maker account
 type Trade struct {
-	OrderHash  string     `json:"orderHash"`
-	Amount     int64      `json:"amount"`
-	Price      int64      `json:"price"`
-	Type       OrderType  `json:"type"`
-	TradeNonce int64      `json:"tradeNonce"`
-	Taker      string     `json:"taker"`
-	Signature  *Signature `json:"signature"`
-	Hash       string     `json:"hash"`
-	PairName   string     `json:"pairName"`
+	ID           bson.ObjectId `json:"id,omitempty" bson:"_id"`
+	OrderHash    string        `json:"orderHash" bson:"orderHash"`
+	Amount       int64         `json:"amount" bson:"amount"`
+	Price        int64         `json:"price" bson:"price"`
+	Type         OrderType     `json:"type" bson:"type"`
+	TradeNonce   int64         `json:"tradeNonce" bson:"tradeNonce"`
+	Taker        string        `json:"taker" bson:"taker"`
+	Maker        string        `json:"maker" bson:"maker"`
+	TakerOrderID bson.ObjectId `json:"takerOrderId" bson:"takerOrderId"`
+	MakerOrderID bson.ObjectId `json:"makerOrderId" bson:"makerOrderId"`
+	Signature    *Signature    `json:"signature" bson:"signature"`
+	Hash         string        `json:"hash" bson:"hash"`
+	PairName     string        `json:"pairName" bson:"pairName"`
+	CreatedAt    time.Time     `json:"createdAt" bson:"createdAt" redis:"createdAt"`
+	UpdatedAt    time.Time     `json:"updatedAt" bson:"updatedAt" redis:"updatedAt"`
 }
 
 // NewTrade returns a new unsigned trade corresponding to an Order, amount and taker address

@@ -23,11 +23,11 @@ func InitSession() error {
 	return nil
 }
 
-func (d *Database) Create(dbName, collection string, data interface{}) (err error) {
+func (d *Database) Create(dbName, collection string, data ...interface{}) (err error) {
 	sc := d.session.Copy()
 	defer sc.Close()
 
-	err = sc.DB(dbName).C(collection).Insert(data)
+	err = sc.DB(dbName).C(collection).Insert(data...)
 	return
 }
 
