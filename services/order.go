@@ -42,6 +42,8 @@ func (s *OrderService) Create(order *types.Order) (err error) {
 
 	// Validate if order is valid
 
+	// TODO: Signature Validation
+
 	// balance validation
 	bal, err := s.balanceDao.GetByAddress(order.UserAddress)
 	if err != nil {
@@ -99,7 +101,6 @@ func (s *OrderService) GetAll() ([]types.Order, error) {
 func (s *OrderService) UpdateUsingEngineResponse(er *engine.EngineResponse) {
 	if er.FillStatus == engine.ERROR {
 		fmt.Println("Error")
-
 		s.orderDao.Update(er.Order.ID, er.Order)
 		res, err := s.balanceDao.GetByAddress(er.Order.UserAddress)
 		if err != nil {

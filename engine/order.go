@@ -121,7 +121,7 @@ func (e *EngineResource) buyOrder(order *types.Order, match *Match) (err error) 
 	// GET Range of sellOrder between minimum Sell order and order.Price
 	orders, err := redis.Values(e.redisConn.Do("ZRANGEBYLEX", oskv, "-", "["+utils.UintToPaddedString(order.Price))) // "ZRANGEBYLEX" key min max
 	if err != nil {
-		log.Printf("ZREVRANGEBYLEX: %s\n", err)
+		log.Printf("ZRANGEBYLEXs: %s\n", err)
 		return
 	}
 	priceRange := make([]int64, 0)

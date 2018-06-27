@@ -36,6 +36,7 @@ func ServeOrderResource(rg *routing.RouteGroup, orderService *services.OrderServ
 	// rg.Get("/orders", r.query)
 	// rg.Post("/orders", r.create)
 	http.HandleFunc("/orders/ws", r.ws)
+	http.HandleFunc("/orders/book/<pair>", r.ws)
 	e.SubscribeEngineResponse(r.engineResponse)
 }
 
@@ -57,7 +58,6 @@ func (r *orderEndpoint) ws(w http.ResponseWriter, req *http.Request) {
 		log.Println("==>" + err.Error())
 		return
 	}
-
 	// go func() {
 	ch := make(chan *types.WsMsg)
 	for {
@@ -65,7 +65,6 @@ func (r *orderEndpoint) ws(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			log.Println("<==>" + err.Error())
 			conn.Close()
-
 			return
 		}
 		var msg *types.WsMsg
@@ -109,6 +108,7 @@ func (r *orderEndpoint) ws(w http.ResponseWriter, req *http.Request) {
 			if ws.Connections == nil {
 				ws.Connections = make(map[string]*ws.Ws)
 			}
+			conn.SetCloseHandler(ws.OrderSocketCloseHandler(order.ID))
 			ws.Connections[order.ID.Hex()] = &ws.Ws{Conn: conn, ReadChannel: ch}
 		} else {
 			ws.Connections[msg.OrderID.Hex()].ReadChannel <- msg
@@ -120,5 +120,6 @@ func (r *orderEndpoint) engineResponse(er *engine.EngineResponse) error {
 	b, _ := json.Marshal(er)
 	fmt.Printf("\n======> \n%s\n <======\n", b)
 	r.orderService.UpdateUsingEngineResponse(er)
+	// TODO: send to operator for blockchain execution
 	return nil
 }
