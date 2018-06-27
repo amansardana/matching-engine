@@ -1,6 +1,10 @@
 package endpoints
 
 import (
+	"encoding/json"
+	"log"
+	"net/http"
+
 	"github.com/amansardana/matching-engine/errors"
 	"github.com/amansardana/matching-engine/services"
 	"github.com/amansardana/matching-engine/types"
@@ -18,6 +22,7 @@ func ServePairResource(rg *routing.RouteGroup, pairService *services.PairService
 	rg.Get("/pairs/<id>", r.get)
 	rg.Get("/pairs", r.query)
 	rg.Post("/pairs", r.create)
+	http.HandleFunc("/pairs/book", r.orderBook)
 }
 
 func (r *pairEndpoint) create(c *routing.Context) error {
@@ -57,4 +62,25 @@ func (r *pairEndpoint) get(c *routing.Context) error {
 	}
 
 	return c.Write(response)
+}
+
+func (r *pairEndpoint) orderBook(w http.ResponseWriter, req *http.Request) {
+
+	conn, err := upgrader.Upgrade(w, req, nil)
+	if err != nil {
+		log.Println("==>" + err.Error())
+		return
+	}
+	queryParams := req.URL.Query()
+	list := queryParams["pairName"]
+	if len(list) == 0 || len(list) > 1 {
+		message := map[string]string{
+			"Code":    "Invalid_Pair_Name",
+			"Message": "Invalid Pair Name passed in query Params",
+		}
+		mab, _ := json.Marshal(message)
+		conn.WriteMessage(1, mab)
+		conn.Close()
+	}
+	r.pairService.RegisterForOrderBook(conn, list[0])
 }

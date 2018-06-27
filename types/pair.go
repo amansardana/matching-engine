@@ -33,3 +33,6 @@ func (t Pair) Validate() error {
 		validation.Field(&t.SellTokenSymbol, validation.Required),
 	)
 }
+func (p *Pair) GetOrderBookKeys() (sell, buy string) {
+	return p.BuyTokenSymbol + "::" + p.SellTokenSymbol + "::sell", p.BuyTokenSymbol + "::" + p.SellTokenSymbol + "::buy"
+}
