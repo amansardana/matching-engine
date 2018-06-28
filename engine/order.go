@@ -121,7 +121,7 @@ func (e *EngineResource) buyOrder(order *types.Order, match *Match) (err error) 
 	// GET Range of sellOrder between minimum Sell order and order.Price
 	orders, err := redis.Values(e.redisConn.Do("ZRANGEBYLEX", oskv, "-", "["+utils.UintToPaddedString(order.Price))) // "ZRANGEBYLEX" key min max
 	if err != nil {
-		log.Printf("ZRANGEBYLEXs: %s\n", err)
+		log.Printf("ZRANGEBYLEX: %s\n", err)
 		return
 	}
 	priceRange := make([]int64, 0)
@@ -243,6 +243,11 @@ func (e *EngineResource) addOrder(order *types.Order) {
 		log.Printf("ZADD: %s", err)
 	}
 	fmt.Printf("ZADD: %s\n", res)
+	res, err = e.redisConn.Do("INCRBY", ssKey+"::book::"+utils.UintToPaddedString(order.Price), order.Amount) // Add price point to order book
+	if err != nil {
+		log.Printf("INCRBY: %s", err)
+	}
+	fmt.Printf("INCRBY: %s\n", res)
 
 	// Add order to list
 	orderAsBytes, err := json.Marshal(order)

@@ -113,6 +113,12 @@ func (e *EngineResource) execute(m *Match, er *EngineResponse) (err error) {
 
 		er.MatchingOrders = append(er.MatchingOrders, &FillOrder{o.Amount, &bookEntry})
 
+		// Update OrderBook
+		res, err := e.redisConn.Do("INCRBY", ss+"::book::"+utils.UintToPaddedString(order.Price), -1*order.Amount) // Add price point to order book
+		if err != nil {
+			log.Printf("DEL BookEntry: %s", err)
+		}
+		fmt.Printf("DEL BookEntry: %s\n", res)
 		// Get length of remaining orders in the list
 
 		l, err := redis.Int64(e.redisConn.Do("LLEN", list))
@@ -126,7 +132,11 @@ func (e *EngineResource) execute(m *Match, er *EngineResponse) (err error) {
 				return err
 			}
 			// fmt.Printf("del: %s", res)
-
+			res, err := e.redisConn.Do("DEL", ss+"::book::"+utils.UintToPaddedString(order.Price)) // Add price point to order book
+			if err != nil {
+				log.Printf("DEL BookEntry: %s", err)
+			}
+			fmt.Printf("DEL BookEntry: %s\n", res)
 			_, err = e.redisConn.Do("ZREM", ss, utils.UintToPaddedString(mo.Price))
 			if err != nil {
 				log.Printf("ZREM: %s", err)

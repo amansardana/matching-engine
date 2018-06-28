@@ -44,3 +44,14 @@ func (dao *TradeDao) GetByID(id bson.ObjectId) (response *types.Trade, err error
 	err = DB.GetByID(dao.dbName, dao.collectionName, id, &response)
 	return
 }
+func (dao *TradeDao) GetByPairName(name string) (response []*types.Trade, err error) {
+	q := bson.M{"pairName": bson.RegEx{
+		Pattern: name,
+		Options: "i",
+	}}
+	err = DB.Get(dao.dbName, dao.collectionName, q, 0, 1, &response)
+	if err != nil {
+		return
+	}
+	return
+}

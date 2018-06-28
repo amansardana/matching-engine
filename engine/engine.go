@@ -186,3 +186,5 @@ func getChannel(id string) *amqp.Channel {
 	}
 	return channels[id]
 }
+
+

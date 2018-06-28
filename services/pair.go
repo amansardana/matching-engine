@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/amansardana/matching-engine/engine"
+
 	"github.com/amansardana/matching-engine/ws"
 
 	"github.com/gorilla/websocket"
@@ -17,12 +19,15 @@ import (
 )
 
 type PairService struct {
-	pairDao  *daos.PairDao
-	tokenDao *daos.TokenDao
+	pairDao      *daos.PairDao
+	tokenDao     *daos.TokenDao
+	eng          *engine.EngineResource
+	tradeService *TradeService
 }
 
-func NewPairService(pairDao *daos.PairDao, tokenDao *daos.TokenDao) *PairService {
-	return &PairService{pairDao, tokenDao}
+func NewPairService(pairDao *daos.PairDao, tokenDao *daos.TokenDao, eng *engine.EngineResource, tradeService *TradeService) *PairService {
+
+	return &PairService{pairDao, tokenDao, eng, tradeService}
 }
 
 func (s *PairService) Create(pair *types.Pair) error {
@@ -78,10 +83,21 @@ func (s *PairService) RegisterForOrderBook(conn *websocket.Conn, pairName string
 	}
 	conn.SetCloseHandler(ws.PairSocketCloseHandler(res.Name, conn))
 
-	for {
-		if _, _, err := conn.NextReader(); err != nil {
-			conn.Close()
-			break
+	go func() {
+		for {
+			if _, _, err := conn.NextReader(); err != nil {
+				conn.Close()
+				break
+			}
 		}
+	}()
+	sBook, bBook := s.eng.GetOrderBook(res)
+	trades, _ := s.tradeService.GetByPairName(res.Name)
+	response := map[string]interface{}{
+		"sell":   sBook,
+		"buy":    bBook,
+		"trades": trades,
 	}
+	rab, _ := json.Marshal(response)
+	conn.WriteMessage(1, rab)
 }

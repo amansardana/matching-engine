@@ -86,18 +86,19 @@ func buildRouter(logger *logrus.Logger) *routing.Router {
 	addressDao := daos.NewAddressDao()
 	tradesDao := daos.NewTradeDao()
 
-	// get services for injection
-	tokenService := services.NewTokenService(tokenDao)
-	pairService := services.NewPairService(pairDao, tokenDao)
-	balanceService := services.NewBalanceService(balanceDao, tokenDao)
-	orderService := services.NewOrderService(orderDao, balanceDao, pairDao,tradesDao)
-	addressService := services.NewAddressService(addressDao, balanceDao, tokenDao)
-
 	// instantiate engine
 	e, err := engine.InitEngine(orderDao)
 	if err != nil {
 		panic(err)
 	}
+
+	// get services for injection
+	tokenService := services.NewTokenService(tokenDao)
+	tradeService := services.NewTradeService(tradesDao)
+	pairService := services.NewPairService(pairDao, tokenDao, e, tradeService)
+	balanceService := services.NewBalanceService(balanceDao, tokenDao)
+	orderService := services.NewOrderService(orderDao, balanceDao, pairDao, tradesDao)
+	addressService := services.NewAddressService(addressDao, balanceDao, tokenDao)
 
 	endpoints.ServeTokenResource(rg, tokenService)
 	endpoints.ServePairResource(rg, pairService)
