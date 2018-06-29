@@ -2,7 +2,6 @@ package endpoints
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -33,8 +32,6 @@ var upgrader = websocket.Upgrader{
 func ServeOrderResource(rg *routing.RouteGroup, orderService *services.OrderService, e *engine.EngineResource) {
 	r := &orderEndpoint{orderService}
 	rg.Get("/orders/<addr>", r.get)
-	// rg.Get("/orders", r.query)
-	// rg.Post("/orders", r.create)
 	http.HandleFunc("/orders/ws", r.ws)
 	http.HandleFunc("/orders/book/<pair>", r.ws)
 	e.SubscribeEngineResponse(r.engineResponse)
@@ -117,11 +114,11 @@ func (r *orderEndpoint) ws(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *orderEndpoint) engineResponse(er *engine.EngineResponse) error {
-	b, _ := json.Marshal(er)
-	fmt.Printf("\n======> \n%s\n <======\n", b)
+	// b, _ := json.Marshal(er)
+	// fmt.Printf("\n======> \n%s\n <======\n", b)
 	r.orderService.UpdateUsingEngineResponse(er)
 	// TODO: send to operator for blockchain execution
 
-	
+	r.orderService.RelayUpdateOverSocket(er)
 	return nil
 }

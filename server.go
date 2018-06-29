@@ -35,7 +35,7 @@ func main() {
 	// create the logger
 	logger := logrus.New()
 
-	rabbitmq.InitConnection("amqp://guest:guest@localhost:5672/")
+	rabbitmq.InitConnection(app.Config.Rabbitmq)
 
 	// connect to the database
 	if err := daos.InitSession(); err != nil {
@@ -76,7 +76,6 @@ func buildRouter(logger *logrus.Logger) *routing.Router {
 	// 	SigningMethod: app.Config.JWTSigningMethod,
 	// 	TokenHandler:  apis.JWTHandler,
 	// }))
-	redisClient.InitConnection()
 
 	// get daos for dependency injection
 	orderDao := daos.NewOrderDao()
@@ -87,7 +86,7 @@ func buildRouter(logger *logrus.Logger) *routing.Router {
 	tradesDao := daos.NewTradeDao()
 
 	// instantiate engine
-	e, err := engine.InitEngine(orderDao)
+	e, err := engine.InitEngine(orderDao, redisClient.InitConnection(app.Config.Redis))
 	if err != nil {
 		panic(err)
 	}
@@ -105,10 +104,6 @@ func buildRouter(logger *logrus.Logger) *routing.Router {
 	endpoints.ServeBalanceResource(rg, balanceService)
 	endpoints.ServeOrderResource(rg, orderService, e)
 	endpoints.ServeAddressResource(rg, addressService)
-	// artistDAO := daos.NewArtistDAO()
-	// apis.ServeArtistResource(rg, services.NewArtistService(artistDAO))
-
-	// wire up more resource APIs here
 
 	return router
 }

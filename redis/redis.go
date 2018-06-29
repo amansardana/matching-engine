@@ -1,4 +1,4 @@
-package redisClient
+package redisclient
 
 import (
 	"fmt"
@@ -6,8 +6,9 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-func InitConnection() redis.Conn {
-	c, err := redis.DialURL("redis://localhost:6379")
+// InitConnection returns a new connection to redis
+func InitConnection(uri string) redis.Conn {
+	c, err := redis.DialURL(uri)
 	if err != nil {
 		fmt.Println(err)
 		panic(err)

@@ -1,10 +1,13 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"math"
+
+	"github.com/amansardana/matching-engine/ws"
 
 	"labix.org/v2/mgo/bson"
 
@@ -231,6 +234,22 @@ func (s *OrderService) UpdateUsingEngineResponse(er *engine.EngineResponse) {
 	}
 }
 
-func RelayUpdateOverSocket(er *engine.EngineResponse) {
-	
+// RelayUpdateOverSocket is responsible for notifying listening clients about new order/trade addition/deletion
+func (s *OrderService) RelayUpdateOverSocket(er *engine.EngineResponse) {
+	if len(er.Trades) > 0 {
+		message := &types.WsMsg{
+			MsgType: "trades_added",
+			Data:    er.Trades,
+		}
+		mab, _ := json.Marshal(message)
+		ws.PairSocketWriteMessage(er.Order.PairName, mab)
+	}
+	if er.RemainingOrder != nil {
+		message := &types.WsMsg{
+			MsgType: "order_added",
+			Data:    er.RemainingOrder,
+		}
+		mab, _ := json.Marshal(message)
+		ws.PairSocketWriteMessage(er.Order.PairName, mab)
+	}
 }

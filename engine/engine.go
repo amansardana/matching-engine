@@ -5,8 +5,6 @@ import (
 	"errors"
 	"log"
 
-	"github.com/amansardana/matching-engine/redis"
-
 	"github.com/gomodule/redigo/redis"
 
 	"github.com/streadway/amqp"
@@ -26,13 +24,12 @@ var channels = make(map[string]*amqp.Channel)
 var queues = make(map[string]*amqp.Queue)
 var Engine *EngineResource
 
-func InitEngine(orderDao *daos.OrderDao) (engine *EngineResource, err error) {
+func InitEngine(orderDao *daos.OrderDao, redisConn redis.Conn) (engine *EngineResource, err error) {
 	if Engine == nil {
 		if orderDao == nil {
 			return nil, errors.New("Need pointer to struct of type daos.OrderDao")
 		}
-		rc := redisClient.InitConnection()
-		Engine = &EngineResource{orderDao, rc}
+		Engine = &EngineResource{orderDao, redisConn}
 		Engine.subscribeOrder()
 	}
 	engine = Engine
@@ -186,5 +183,3 @@ func getChannel(id string) *amqp.Channel {
 	}
 	return channels[id]
 }
-
-

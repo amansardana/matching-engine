@@ -4,6 +4,9 @@ dsn: "127.0.0.1"
 
 db_name: proofdex
 
+rabitmq: amqp://guest:guest@localhost:5672/
+redis: redis://localhost:6379
+
 # These are secret keys used for JWT signing and verification.
 # Make sure you override these keys in production by the following environment variables:
 #   RESTFUL_JWT_VERIFICATION_KEY

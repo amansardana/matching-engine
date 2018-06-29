@@ -18,11 +18,15 @@ type appConfig struct {
 	// the data source name (DSN) for connecting to the database. required.
 	DSN string `mapstructure:"dsn"`
 	// the data source name (DSN) for connecting to the database. required.
-	DBName  string  `mapstructure:"db_name"`
+	DBName string `mapstructure:"db_name"`
 	// the make fee is the percentage to charged from maker
 	MakeFee float64 `mapstructure:"make_fee"`
 	// the take fee is the percentage to charged from maker
 	TakeFee float64 `mapstructure:"take_fee"`
+	// the Rabbitmq is the URI of rabbitmq to use
+	Rabbitmq string `mapstructure:"rabbitmq"`
+	// the redis is the URI of redis to use
+	Redis string `mapstructure:"redis"`
 	// the signing method for JWT. Defaults to "HS256"
 	JWTSigningMethod string `mapstructure:"jwt_signing_method"`
 	// JWT signing key. required.
